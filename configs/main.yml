@@ -11,7 +11,7 @@ postgresql:
   port: 5432
   user: postgres
   password: zxc13243546
-  dbname: film_library
+  dbname: films_library
   sslmode: disabled
   maxIdleConnections: 5
   maxOpenConnections: 20

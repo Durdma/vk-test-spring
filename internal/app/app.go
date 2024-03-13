@@ -1,7 +1,9 @@
 package app
 
 import (
+	"context"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,6 +20,14 @@ func Run(configPath string) {
 	}
 
 	logger.Infof("%+v\n", *cfg)
+
+	connString := fmt.Sprintf("postgresql://%v:%v@%v:%v/%v", cfg.PostgreSQL.User, cfg.PostgreSQL.Password, cfg.PostgreSQL.Host, cfg.PostgreSQL.Port, cfg.PostgreSQL.DBName)
+
+	conn, err := pgx.Connect(context.Background(), connString)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	defer conn.Close(context.Background())
 
 	srv := server.NewServer(cfg)
 	go func() {

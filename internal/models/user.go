@@ -10,7 +10,3 @@ type Role struct {
 	ID   int
 	Role string
 }
-
-type Admin struct {
-	User
-}
