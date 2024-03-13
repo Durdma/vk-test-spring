@@ -10,3 +10,9 @@ type Films interface {
 	EditFilm(ctx context.Context, input FilmInput) error
 	DeleteFilm(ctx context.Context, name string) error
 }
+
+type Actors interface {
+}
+
+type Users interface {
+}
