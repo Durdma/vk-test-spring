@@ -1,14 +1,14 @@
 package app
 
 import (
-	"context"
 	"fmt"
-	"github.com/jackc/pgx/v5"
+	"golang.org/x/net/context"
 	"os"
 	"os/signal"
 	"syscall"
 	"vk-test-spring/internal/config"
 	"vk-test-spring/internal/server"
+	"vk-test-spring/pkg/database/postgresql"
 	"vk-test-spring/pkg/logger"
 )
 
@@ -21,13 +21,7 @@ func Run(configPath string) {
 
 	logger.Infof("%+v\n", *cfg)
 
-	connString := fmt.Sprintf("postgresql://%v:%v@%v:%v/%v", cfg.PostgreSQL.User, cfg.PostgreSQL.Password, cfg.PostgreSQL.Host, cfg.PostgreSQL.Port, cfg.PostgreSQL.DBName)
-
-	conn, err := pgx.Connect(context.Background(), connString)
-	if err != nil {
-		logger.Error(err.Error())
-	}
-	defer conn.Close(context.Background())
+	dbHandler := postgresql.NewConnection(cfg.PostgreSQL)
 
 	srv := server.NewServer(cfg)
 	go func() {
@@ -42,4 +36,8 @@ func Run(configPath string) {
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 
 	<-quit
+
+	if err := dbHandler.Close(context.Background()); err != nil {
+		logger.Error(err.Error())
+	}
 }
