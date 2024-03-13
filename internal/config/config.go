@@ -13,7 +13,7 @@ const (
 )
 
 type Config struct {
-	// PostgreSQL  PostgreSQLConfig
+	PostgreSQL  PostgreSQLConfig
 	HTTP        HTTPConfig
 	LoggerLevel int
 }
@@ -25,6 +25,16 @@ type HTTPConfig struct {
 }
 
 type PostgreSQLConfig struct {
+	Host                  string
+	Port                  string
+	User                  string
+	Password              string
+	DBName                string
+	SSLMode               string
+	MaxIdleConnections    int
+	MaxOpenConnections    int
+	ConnectionMaxLifetime time.Duration
+	DriverName            string
 }
 
 func Init(path string) (*Config, error) {
@@ -49,6 +59,10 @@ func unmarshal(cfg *Config) error {
 	}
 
 	if err := viper.UnmarshalKey("http", &cfg.HTTP); err != nil {
+		return err
+	}
+
+	if err := viper.UnmarshalKey("postgresql", &cfg.PostgreSQL); err != nil {
 		return err
 	}
 

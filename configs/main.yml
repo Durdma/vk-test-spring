@@ -5,3 +5,15 @@ http:
 
 logger:
   level: 5
+
+postgresql:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: zxc13243546
+  dbname: film_library
+  sslmode: disabled
+  maxIdleConnections: 5
+  maxOpenConnections: 20
+  connectionMaxLifetime: 60s
+  driverName: postgres
