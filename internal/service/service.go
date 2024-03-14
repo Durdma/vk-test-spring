@@ -8,6 +8,11 @@ import (
 )
 
 type FilmInput struct {
+	Name        string
+	Description string
+	Date        string
+	Rating      float64
+	Actors      []uuid.UUID
 }
 
 type Films interface {

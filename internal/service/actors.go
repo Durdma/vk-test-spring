@@ -31,10 +31,12 @@ func (s *ActorsService) AddActor(ctx context.Context, input ActorInput) error {
 		return err
 	}
 
-	for _, f := range input.Films {
-		err := s.repo.InsertIntoActorFilm(ctx, id, f)
-		if err != nil {
-			return err
+	if len(input.Films) > 0 {
+		for _, f := range input.Films {
+			err := s.repo.InsertIntoActorFilm(ctx, id, f)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

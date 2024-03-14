@@ -1,9 +1,12 @@
 package httpv1
 
 import (
+	"encoding/json"
+	"github.com/google/uuid"
 	"net/http"
 	"regexp"
 	"vk-test-spring/internal/service"
+	"vk-test-spring/pkg/logger"
 )
 
 var (
@@ -52,8 +55,36 @@ func (h *FilmsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *FilmsHandler) AddFilm(w http.ResponseWriter, r *http.Request) {
+type FilmInput struct {
+	Name        string      `json:"name" binding:"required"`
+	Description string      `json:"description" binding:"required"`
+	Date        string      `json:"date" binding:"required"`
+	Rating      float64     `json:"rating" binding:"required"`
+	Actors      []uuid.UUID `json:"actors,omitempty"`
+}
 
+func (h *FilmsHandler) AddFilm(w http.ResponseWriter, r *http.Request) {
+	var film FilmInput
+	if err := json.NewDecoder(r.Body).Decode(&film); err != nil {
+		http.Error(w, "error while decoding request body", http.StatusInternalServerError)
+		return
+	}
+
+	err := h.filmsService.AddNewFilm(r.Context(), service.FilmInput{
+		Name:        film.Name,
+		Description: film.Description,
+		Date:        film.Date,
+		Rating:      film.Rating,
+		Actors:      film.Actors,
+	})
+	if err != nil {
+		logger.Error("Handler")
+		// TODO Сделать выбор нужной ошибки и добавить логгирование
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *FilmsHandler) UpdateFilm(w http.ResponseWriter, r *http.Request) {
