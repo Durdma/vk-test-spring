@@ -25,6 +25,31 @@ func NewFilmsHandler(filmsService service.Films) *FilmsHandler {
 }
 
 func (h *FilmsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch {
+	case r.Method == http.MethodGet && films.MatchString(r.URL.Path):
+		h.GetAllFilms(w, r)
+		return
+	case r.Method == http.MethodGet && filmsName.MatchString(r.URL.Path):
+		h.GetFilmsByName(w, r)
+		return
+	case r.Method == http.MethodGet && filmsActorName.MatchString(r.URL.Path):
+		h.GetFilmsByActor(w, r)
+		return
+	case r.Method == http.MethodPost && films.MatchString(r.URL.Path) &&
+		r.Context().Value("role").(string) == "администратор":
+		h.AddFilm(w, r)
+		return
+	case r.Method == http.MethodPatch && filmsId.MatchString(r.URL.Path) &&
+		r.Context().Value("role").(string) == "администратор":
+		h.UpdateFilm(w, r)
+		return
+	case r.Method == http.MethodDelete && filmsId.MatchString(r.URL.Path) &&
+		r.Context().Value("role").(string) == "администратор":
+		h.DeleteFilm(w, r)
+		return
+	default:
+		return
+	}
 }
 
 func (h *FilmsHandler) AddFilm(w http.ResponseWriter, r *http.Request) {
