@@ -55,9 +55,16 @@ func (h *Handler) Init(services *service.Services) *http.ServeMux {
 
 func (h *Handler) initAPI(router *http.ServeMux) {
 	router.Handle("/films", h.filmsHandler)
+	router.Handle("/films/", h.filmsHandler)
 	router.Handle("/actors", h.actorsHandler)
+	router.Handle("/actors/", h.actorsHandler)
 	router.Handle("/users", h.usersHandler)
+	router.Handle("/users/", h.usersHandler)
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+}
+
+func (h *Handler) authenticateUser() {
+
 }
