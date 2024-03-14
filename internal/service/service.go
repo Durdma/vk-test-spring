@@ -35,6 +35,7 @@ type Users interface {
 	CreateUser(ctx context.Context, input UserInput) error
 	DeleteUser(ctx context.Context, userId string) error
 	ChangeRole(ctx context.Context, userId string, role string) error
+	GetUserIdRole(username string, password string) (string, string, error)
 }
 
 type Services struct {

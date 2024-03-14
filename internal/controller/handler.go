@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 	"vk-test-spring/internal/controller/httpv1"
 	"vk-test-spring/internal/service"
@@ -35,6 +36,7 @@ type UsersHandler interface {
 	CreateUser(w http.ResponseWriter, r *http.Request)
 	DeleteUser(w http.ResponseWriter, r *http.Request)
 	ChangeRole(w http.ResponseWriter, r *http.Request)
+	GetRole(username string, password string) (string, string, error)
 }
 
 func NewHandler() *Handler {
@@ -54,17 +56,37 @@ func (h *Handler) Init(services *service.Services) *http.ServeMux {
 }
 
 func (h *Handler) initAPI(router *http.ServeMux) {
-	router.Handle("/films", h.filmsHandler)
-	router.Handle("/films/", h.filmsHandler)
-	router.Handle("/actors", h.actorsHandler)
-	router.Handle("/actors/", h.actorsHandler)
-	router.Handle("/users", h.usersHandler)
-	router.Handle("/users/", h.usersHandler)
+	router.Handle("/films", h.usersAuth(h.filmsHandler)) // добавить это на handlers ниже
+	router.Handle("/films/", h.usersAuth(h.filmsHandler))
+	router.Handle("/actors", h.usersAuth(h.actorsHandler))
+	router.Handle("/actors/", h.usersAuth(h.actorsHandler))
+	router.Handle("/users", h.usersAuth(h.usersHandler))
+	router.Handle("/users/", h.usersAuth(h.usersHandler))
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
 }
 
-func (h *Handler) authenticateUser() {
+func (h *Handler) usersAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 
+		userId, role, err := h.usersHandler.GetRole(username, password)
+		if err != nil {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "user_id", userId)
+		ctx = context.WithValue(r.Context(), "role", role)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

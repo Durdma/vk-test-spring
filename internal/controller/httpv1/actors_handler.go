@@ -2,7 +2,14 @@ package httpv1
 
 import (
 	"net/http"
+	"regexp"
 	"vk-test-spring/internal/service"
+)
+
+var (
+	actors    = regexp.MustCompile(`^/actors/*$`)
+	actorId   = regexp.MustCompile(`^/actors/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	actorName = regexp.MustCompile(`^/actors\?name=.+$`)
 )
 
 type ActorsHandler struct {

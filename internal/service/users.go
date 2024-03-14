@@ -26,3 +26,12 @@ func (s *UsersService) DeleteUser(ctx context.Context, userId string) error {
 func (s *UsersService) ChangeRole(ctx context.Context, userId string, role string) error {
 	return nil
 }
+
+func (s *UsersService) GetUserIdRole(username string, password string) (string, string, error) {
+	userId, role, err := s.repo.GetUserIdRole(username, password)
+	if userId == "" || role == "" || err != nil {
+		return "", "", err
+	}
+
+	return userId, role, nil
+}

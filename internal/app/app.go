@@ -42,11 +42,6 @@ func Run(configPath string) {
 
 	logger.Info("Server started")
 
-	//_, err = dbHandler.Exec(context.Background(), "INSERT INTO actors (fio, birthday, sex) VALUES (ROW('Sizask', 'Maxim', 'Edu'), '12-01-2000', 'man')")
-	//if err != nil {
-	//	logger.Error(err.Error())
-	//}
-
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 

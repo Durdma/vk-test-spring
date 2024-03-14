@@ -28,6 +28,7 @@ type Users interface {
 	Create(ctx context.Context, user models.User) error
 	Delete(ctx context.Context, userId string) error
 	Edit(ctx context.Context, user models.User) error
+	GetUserIdRole(username string, password string) (string, string, error)
 }
 
 type Repositories struct {
