@@ -10,11 +10,12 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func NewServer(cfg *config.Config) *Server {
+func NewServer(cfg *config.Config, mux *http.ServeMux) *Server {
 	return &Server{httpServer: &http.Server{
 		Addr:         ":" + cfg.HTTP.Port,
 		ReadTimeout:  cfg.HTTP.ReadTimeout,
 		WriteTimeout: cfg.HTTP.WriteTimeout,
+		Handler:      mux,
 	}}
 }
 
