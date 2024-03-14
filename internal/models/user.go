@@ -1,12 +1,9 @@
 package models
 
-type User struct {
-	ID   int
-	Name string
-	Role Role
-}
+import "github.com/google/uuid"
 
-type Role struct {
-	ID   int
-	Role string
+type User struct {
+	ID   uuid.UUID `json:"id,omitempty"`
+	Name string    `json:"name"`
+	Role string    `json:"role"`
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"vk-test-spring/internal/models"
 	"vk-test-spring/internal/repository/postgresql"
@@ -17,11 +18,12 @@ type Films interface {
 }
 
 type Actors interface {
-	Create(ctx context.Context, actor models.Actor) error
+	Create(ctx context.Context, actor models.Actor) (uuid.UUID, error)
 	Edit(ctx context.Context, actor models.Actor) error
 	Delete(ctx context.Context, actorId string) error
 	GetAllActors(ctx context.Context) ([]models.Actor, error)
 	GetActorsByName(ctx context.Context, name string) ([]models.Actor, error)
+	InsertIntoActorFilm(ctx context.Context, actorId uuid.UUID, filmId uuid.UUID) error
 }
 
 type Users interface {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"vk-test-spring/internal/models"
 	"vk-test-spring/internal/repository"
 )
@@ -19,6 +20,12 @@ type Films interface {
 }
 
 type ActorInput struct {
+	Name        string
+	SecondName  string
+	Patronymic  string
+	Sex         string
+	DateOfBirth string
+	Films       []uuid.UUID
 }
 
 type Actors interface {
@@ -26,6 +33,8 @@ type Actors interface {
 	UpdateActor(ctx context.Context, actor models.Actor) error
 	DeleteActor(ctx context.Context, actorId string) error
 	GetAllActors(ctx context.Context) ([]models.Actor, error)
+	GetActorById(ctx context.Context) (models.Actor, error)
+	GetActorByName(ctx context.Context) ([]models.Actor, error)
 }
 
 type UserInput struct {

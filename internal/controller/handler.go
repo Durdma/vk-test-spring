@@ -19,6 +19,8 @@ type ActorsHandler interface {
 	UpdateActor(w http.ResponseWriter, r *http.Request)
 	DeleteActor(w http.ResponseWriter, r *http.Request)
 	GetAllActors(w http.ResponseWriter, r *http.Request)
+	GetActorById(w http.ResponseWriter, r *http.Request)
+	GetActorByName(w http.ResponseWriter, r *http.Request)
 }
 
 type FilmsHandler interface {
@@ -60,8 +62,8 @@ func (h *Handler) initAPI(router *http.ServeMux) {
 	router.Handle("/films/", h.usersAuth(h.filmsHandler))
 	router.Handle("/actors", h.usersAuth(h.actorsHandler))
 	router.Handle("/actors/", h.usersAuth(h.actorsHandler))
-	router.Handle("/users", h.usersAuth(h.usersHandler))
-	router.Handle("/users/", h.usersAuth(h.usersHandler))
+	router.Handle("/users", h.usersHandler)
+	router.Handle("/users/", h.usersHandler)
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

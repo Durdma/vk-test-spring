@@ -1,9 +1,12 @@
 package models
 
+import "github.com/google/uuid"
+
 type Film struct {
-	Name        string
-	Description string
-	Date        string
-	Rating      float64
-	Actors      []Actor
+	ID          uuid.UUID `json:"id,omitempty"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Date        string    `json:"date"`
+	Rating      float64   `json:"rating"`
+	Actors      []Actor   `json:"actors"`
 }
