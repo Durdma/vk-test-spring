@@ -24,7 +24,7 @@ type Films interface {
 	GetAllFilmsByActor(ctx context.Context, actorsName string) ([]models.Film, error)
 }
 
-type ActorInput struct {
+type ActorCreateInput struct {
 	Name        string
 	SecondName  string
 	Patronymic  string
@@ -33,12 +33,23 @@ type ActorInput struct {
 	Films       []uuid.UUID
 }
 
+type ActorUpdateInput struct {
+	ID          uuid.UUID
+	Name        string
+	SecondName  string
+	Patronymic  string
+	Sex         string
+	DateOfBirth string
+	FilmsToAdd  []uuid.UUID
+	FilmsToDel  []uuid.UUID
+}
+
 type Actors interface {
-	AddActor(ctx context.Context, input ActorInput) error
-	UpdateActor(ctx context.Context, actor models.Actor) error
+	AddActor(ctx context.Context, input ActorCreateInput) error
+	UpdateActor(ctx context.Context, input ActorUpdateInput) error
 	DeleteActor(ctx context.Context, actorId string) error
 	GetAllActors(ctx context.Context) ([]models.Actor, error)
-	GetActorById(ctx context.Context) (models.Actor, error)
+	GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error)
 	GetActorByName(ctx context.Context) ([]models.Actor, error)
 }
 

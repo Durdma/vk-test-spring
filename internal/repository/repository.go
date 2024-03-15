@@ -25,6 +25,8 @@ type Actors interface {
 	GetAllActors(ctx context.Context) ([]models.Actor, error)
 	GetActorsByName(ctx context.Context, name string) ([]models.Actor, error)
 	InsertIntoActorFilm(ctx context.Context, actorId uuid.UUID, filmId uuid.UUID) error
+	DeleteFromActorFilm(ctx context.Context, actorId uuid.UUID, filmId uuid.UUID) error
+	GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error)
 }
 
 type Users interface {

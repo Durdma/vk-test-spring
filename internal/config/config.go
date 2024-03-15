@@ -2,6 +2,8 @@ package config
 
 import (
 	"github.com/spf13/viper"
+	filepath2 "path/filepath"
+	"runtime"
 	"time"
 	"vk-test-spring/pkg/logger"
 )
@@ -71,11 +73,6 @@ func unmarshal(cfg *Config) error {
 
 // TODO Refactor configPath
 func parseConfigFile(filepath string) error {
-	//path := filepath2.Dir(filepath)
-	//name := filepath2.Base(filepath)
-	//
-	//viper.AddConfigPath(path)
-	//viper.SetConfigName(name)
 
 	//dir := filepath2.Dir(filepath)
 	//
@@ -83,11 +80,16 @@ func parseConfigFile(filepath string) error {
 	//
 	//name := filepath2.Base(filepath)
 	//viper.SetConfigName(name)
+	if os := runtime.GOOS; os == "linux" {
+		viper.SetConfigFile("/app/configs/main.yaml")
+		logger.Infof("path: %v", viper.ConfigFileUsed())
+	} else {
+		path := filepath2.Dir(filepath)
+		name := filepath2.Base(filepath)
 
-	viper.SetConfigFile("/app/configs/main.yaml")
-	//viper.AddConfigPath("/etc/app/configs")
-
-	logger.Infof("path: %v", viper.ConfigFileUsed())
+		viper.AddConfigPath(path)
+		viper.SetConfigName(name)
+	}
 
 	return viper.ReadInConfig()
 }

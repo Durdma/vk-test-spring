@@ -2,9 +2,12 @@ package httpv1
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"net/http"
 	"regexp"
+	"strings"
 	"vk-test-spring/internal/service"
 )
 
@@ -49,7 +52,7 @@ func (h *ActorsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type ActorInput struct {
+type ActorCreateInput struct {
 	Name        string      `json:"name" binding:"required"`
 	SecondName  string      `json:"second_name" binding:"required"`
 	Patronymic  string      `json:"patronymic" binding:"required"`
@@ -59,13 +62,13 @@ type ActorInput struct {
 }
 
 func (h *ActorsHandler) AddActor(w http.ResponseWriter, r *http.Request) {
-	var actor ActorInput
+	var actor ActorCreateInput
 	if err := json.NewDecoder(r.Body).Decode(&actor); err != nil {
-		http.Error(w, "error while decoding request body", http.StatusInternalServerError)
+		http.Error(w, "error while decoding request body", http.StatusBadRequest)
 		return
 	}
 
-	err := h.actorsService.AddActor(r.Context(), service.ActorInput{
+	err := h.actorsService.AddActor(r.Context(), service.ActorCreateInput{
 		Name:        actor.Name,
 		SecondName:  actor.Name,
 		Patronymic:  actor.Patronymic,
@@ -82,8 +85,58 @@ func (h *ActorsHandler) AddActor(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
+type ActorUpdateInput struct {
+	Name        string      `json:"name,omitempty"`
+	SecondName  string      `json:"second_name,omitempty"`
+	Patronymic  string      `json:"patronymic,omitempty"`
+	Sex         string      `json:"sex,omitempty"`
+	DateOfBirth string      `json:"date_of_birth,omitempty"`
+	FilmsToAdd  []uuid.UUID `json:"films_to_add,omitempty"`
+	FilmsToDel  []uuid.UUID `json:"films_to_del,omitempty"`
+}
 
+func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
+	var actor ActorUpdateInput
+	if err := json.NewDecoder(r.Body).Decode(&actor); err != nil {
+		http.Error(w, "error while decoding request body", http.StatusBadRequest)
+		return
+	}
+
+	actorId, err := h.getActorIdFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	//fmt.Println(actorId)
+	//fmt.Println(actor)
+
+	err = h.actorsService.UpdateActor(r.Context(), service.ActorUpdateInput{
+		ID:          actorId,
+		Name:        actor.Name,
+		SecondName:  actor.SecondName,
+		Patronymic:  actor.Patronymic,
+		Sex:         actor.Sex,
+		DateOfBirth: actor.DateOfBirth,
+		FilmsToAdd:  actor.FilmsToAdd,
+		FilmsToDel:  actor.FilmsToDel,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *ActorsHandler) getActorIdFromRequest(r *http.Request) (uuid.UUID, error) {
+	parts := strings.Split(r.URL.Path, "/")
+	fmt.Println(parts)
+	fmt.Println(len(parts))
+	if len(parts) != 3 {
+		return uuid.UUID{}, errors.New("error while extracting uuid")
+	}
+
+	return uuid.Parse(parts[2])
 }
 
 func (h *ActorsHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
