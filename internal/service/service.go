@@ -47,7 +47,7 @@ type ActorUpdateInput struct {
 type Actors interface {
 	AddActor(ctx context.Context, input ActorCreateInput) error
 	UpdateActor(ctx context.Context, input ActorUpdateInput) error
-	DeleteActor(ctx context.Context, actorId string) error
+	DeleteActor(ctx context.Context, actorId uuid.UUID) error
 	GetAllActors(ctx context.Context) ([]models.Actor, error)
 	GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error)
 	GetActorByName(ctx context.Context) ([]models.Actor, error)

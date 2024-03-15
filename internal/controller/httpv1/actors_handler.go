@@ -3,7 +3,6 @@ package httpv1
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"net/http"
 	"regexp"
@@ -108,9 +107,6 @@ func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//fmt.Println(actorId)
-	//fmt.Println(actor)
-
 	err = h.actorsService.UpdateActor(r.Context(), service.ActorUpdateInput{
 		ID:          actorId,
 		Name:        actor.Name,
@@ -123,6 +119,7 @@ func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -130,8 +127,6 @@ func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
 
 func (h *ActorsHandler) getActorIdFromRequest(r *http.Request) (uuid.UUID, error) {
 	parts := strings.Split(r.URL.Path, "/")
-	fmt.Println(parts)
-	fmt.Println(len(parts))
 	if len(parts) != 3 {
 		return uuid.UUID{}, errors.New("error while extracting uuid")
 	}
@@ -140,7 +135,19 @@ func (h *ActorsHandler) getActorIdFromRequest(r *http.Request) (uuid.UUID, error
 }
 
 func (h *ActorsHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
+	actorId, err := h.getActorIdFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
+	err = h.actorsService.DeleteActor(r.Context(), actorId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *ActorsHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {

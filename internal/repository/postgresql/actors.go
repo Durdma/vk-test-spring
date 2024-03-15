@@ -118,11 +118,29 @@ func (r *ActorsRepo) Edit(ctx context.Context, actor models.Actor) error {
 	return err
 }
 
-func (r *ActorsRepo) Delete(ctx context.Context, actorId string) error {
+func (r *ActorsRepo) Delete(ctx context.Context, actorId uuid.UUID) error {
+	query := `DELETE FROM actors WHERE id=@actorId`
+	args := pgx.NamedArgs{
+		"actorId": actorId,
+	}
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.Exec(ctx, query, args)
+	if err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	tx.Commit(ctx)
 	return nil
 }
 
 func (r *ActorsRepo) GetAllActors(ctx context.Context) ([]models.Actor, error) {
+
 	return nil, nil
 }
 

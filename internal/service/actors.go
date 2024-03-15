@@ -143,8 +143,8 @@ func (s *ActorsService) parseFilmsLists(currentFilms []models.Film, filmsToAdd [
 	return nil
 }
 
-func (s *ActorsService) DeleteActor(ctx context.Context, actorId string) error {
-	return nil
+func (s *ActorsService) DeleteActor(ctx context.Context, actorId uuid.UUID) error {
+	return s.repo.Delete(ctx, actorId)
 }
 
 func (s *ActorsService) GetAllActors(ctx context.Context) ([]models.Actor, error) {
