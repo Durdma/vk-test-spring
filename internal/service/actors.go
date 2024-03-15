@@ -153,7 +153,7 @@ func (s *ActorsService) GetAllActors(ctx context.Context) ([]models.Actor, error
 
 func (s *ActorsService) GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error) {
 
-	return models.Actor{}, nil
+	return s.repo.GetActorById(ctx, actorId)
 }
 
 func (s *ActorsService) GetActorByName(ctx context.Context) ([]models.Actor, error) {

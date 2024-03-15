@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	actors    = regexp.MustCompile(`^/actors/*$`)
-	actorId   = regexp.MustCompile(`^/actors/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-	actorName = regexp.MustCompile(`^/actors\?name=.+$`)
+	actorsRe    = regexp.MustCompile(`^/actors/*$`)
+	actorIdRe   = regexp.MustCompile(`^/actors/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	actorNameRe = regexp.MustCompile(`^/actors\?name=.+$`)
 )
 
 type ActorsHandler struct {
@@ -29,21 +29,21 @@ func NewActorsHandler(actorsService service.Actors) *ActorsHandler {
 
 func (h *ActorsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
-	case r.Method == http.MethodGet && actors.MatchString(r.URL.Path):
+	case r.Method == http.MethodGet && actorsRe.MatchString(r.URL.Path):
 		h.GetAllActors(w, r)
 		return
-	case r.Method == http.MethodGet && actorId.MatchString(r.URL.Path):
+	case r.Method == http.MethodGet && actorIdRe.MatchString(r.URL.Path):
 		h.GetActorById(w, r)
 		return
-	case r.Method == http.MethodPost && actors.MatchString(r.URL.Path) &&
+	case r.Method == http.MethodPost && actorsRe.MatchString(r.URL.Path) &&
 		r.Context().Value("role").(string) == "администратор":
 		h.AddActor(w, r)
 		return
-	case r.Method == http.MethodPatch && actorId.MatchString(r.URL.Path) &&
+	case r.Method == http.MethodPatch && actorIdRe.MatchString(r.URL.Path) &&
 		r.Context().Value("role").(string) == "администратор":
 		h.UpdateActor(w, r)
 		return
-	case r.Method == http.MethodDelete && actorId.MatchString(r.URL.Path) &&
+	case r.Method == http.MethodDelete && actorIdRe.MatchString(r.URL.Path) &&
 		r.Context().Value("role").(string) == "администратор":
 		h.DeleteActor(w, r)
 		return
@@ -171,7 +171,25 @@ func (h *ActorsHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorsHandler) GetActorById(w http.ResponseWriter, r *http.Request) {
+	actorId, err := h.getActorIdFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
+	actor, err := h.actorsService.GetActorById(r.Context(), actorId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(actor)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
 }
 
 func (h *ActorsHandler) GetActorByName(w http.ResponseWriter, r *http.Request) {
