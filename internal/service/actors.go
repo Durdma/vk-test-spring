@@ -112,7 +112,7 @@ func (s *ActorsService) mergeChanges(actor models.Actor, oldActor models.Actor) 
 	return actor, nil
 }
 
-func (s *ActorsService) parseFilmsLists(currentFilms []models.Film, filmsToAdd []uuid.UUID, filmsToDel []uuid.UUID) error {
+func (s *ActorsService) parseFilmsLists(currentFilms []models.ActorFilm, filmsToAdd []uuid.UUID, filmsToDel []uuid.UUID) error {
 	for _, f := range filmsToAdd {
 		if slices.Contains(filmsToDel, f) {
 			return errors.New(fmt.Sprintf("films_to_add and films_to_del contains same film_id: %v", f))

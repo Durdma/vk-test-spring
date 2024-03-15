@@ -237,13 +237,13 @@ func (r *ActorsRepo) dateTypeToString(t time.Time) string {
 	return t.Format(time.DateOnly)
 }
 
-func (r *ActorsRepo) getActorFilms(ctx context.Context, actorId uuid.UUID) ([]models.Film, error) {
+func (r *ActorsRepo) getActorFilms(ctx context.Context, actorId uuid.UUID) ([]models.ActorFilm, error) {
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := r.db.Query(ctx, `SELECT films.id, films.name, films.description, films.date, films.rating
+	rows, err := r.db.Query(ctx, `SELECT films.id, films.name
 	FROM films
 	JOIN actors_films ON films.id = actors_films.fk_film_id
 	JOIN actors ON actors.id = actors_films.fk_actor_id
@@ -259,20 +259,17 @@ func (r *ActorsRepo) getActorFilms(ctx context.Context, actorId uuid.UUID) ([]mo
 	}
 	defer rows.Close()
 
-	var films []models.Film
+	var films []models.ActorFilm
 	for rows.Next() {
-		film := models.Film{}
-		var t time.Time
+		film := models.ActorFilm{}
 
-		err := rows.Scan(&film.ID, &film.Name, &film.Description, &t, &film.Rating)
+		err := rows.Scan(&film.ID, &film.Name)
 		if err != nil {
 			logger.Errorf("error 2 in getActorFilms: %v", err)
 
 			tx.Rollback(ctx)
 			return nil, err
 		}
-
-		film.Date = r.dateTypeToString(t)
 
 		films = append(films, film)
 	}
