@@ -2,16 +2,16 @@ package postgresql
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"vk-test-spring/internal/models"
 	"vk-test-spring/pkg/logger"
 )
 
 type UsersRepo struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewUsersRepo(db *pgx.Conn) *UsersRepo {
+func NewUsersRepo(db *pgxpool.Pool) *UsersRepo {
 	return &UsersRepo{
 		db: db,
 	}

@@ -4,12 +4,30 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 	"vk-test-spring/internal/config"
 	"vk-test-spring/pkg/logger"
 )
 
 const timeout = 10 * time.Second
+
+func NewConnectionPool(cfg config.PostgreSQLConfig) *pgxpool.Pool {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	pool, err := pgxpool.New(ctx, getConnectionString(cfg))
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	err = pool.Ping(context.Background())
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	return pool
+}
 
 func NewConnection(cfg config.PostgreSQLConfig) *pgx.Conn {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)

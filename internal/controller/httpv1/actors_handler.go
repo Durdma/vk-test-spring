@@ -3,6 +3,7 @@ package httpv1
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"net/http"
 	"regexp"
@@ -151,7 +152,22 @@ func (h *ActorsHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorsHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
+	actorsList, err := h.actorsService.GetAllActors(r.Context())
+	if err != nil {
+		fmt.Println("1")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	jsonResponse, err := json.Marshal(actorsList)
+	if err != nil {
+		fmt.Println("2")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
 }
 
 func (h *ActorsHandler) GetActorById(w http.ResponseWriter, r *http.Request) {

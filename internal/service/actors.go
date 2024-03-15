@@ -148,7 +148,7 @@ func (s *ActorsService) DeleteActor(ctx context.Context, actorId uuid.UUID) erro
 }
 
 func (s *ActorsService) GetAllActors(ctx context.Context) ([]models.Actor, error) {
-	return nil, nil
+	return s.repo.GetAllActors(ctx)
 }
 
 func (s *ActorsService) GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error) {

@@ -3,18 +3,20 @@ package postgresql
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 	"vk-test-spring/internal/models"
 	"vk-test-spring/pkg/logger"
 )
 
 type ActorsRepo struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func MewActorsRepo(db *pgx.Conn) *ActorsRepo {
+func MewActorsRepo(db *pgxpool.Pool) *ActorsRepo {
 	return &ActorsRepo{
 		db: db,
 	}
@@ -140,8 +142,53 @@ func (r *ActorsRepo) Delete(ctx context.Context, actorId uuid.UUID) error {
 }
 
 func (r *ActorsRepo) GetAllActors(ctx context.Context) ([]models.Actor, error) {
+	query := `SELECT id, f_name, s_name, patronymic, birthday, sex FROM actors`
 
-	return nil, nil
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		tx.Rollback(ctx)
+		return nil, err
+	}
+	defer rows.Close()
+
+	actors := make([]models.Actor, 0)
+
+	for rows.Next() {
+		actor := models.Actor{}
+		var t time.Time
+
+		err := rows.Scan(&actor.ID, &actor.Name, &actor.SecondName, &actor.Patronymic, &t, &actor.Sex)
+		if err != nil {
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		actor.DateOfBirth = r.dateTypeToString(t)
+
+		films, err := r.getActorFilms(ctx, actor.ID)
+		if err != nil {
+
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		actor.Films = films
+
+		fmt.Println(actor)
+
+		actors = append(actors, actor)
+	}
+
+	tx.Commit(ctx)
+	return actors, nil
 }
 
 func (r *ActorsRepo) GetActorsByName(ctx context.Context, name string) ([]models.Actor, error) {
@@ -202,6 +249,9 @@ func (r *ActorsRepo) getActorFilms(ctx context.Context, actorId uuid.UUID) ([]mo
 	JOIN actors ON actors.id = actors_films.fk_actor_id
 	WHERE actors.id = $1`, actorId)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		logger.Errorf("error 1 in getActorFilms: %v", err)
 
 		tx.Rollback(ctx)

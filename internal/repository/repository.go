@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"vk-test-spring/internal/models"
 	"vk-test-spring/internal/repository/postgresql"
 )
@@ -42,10 +42,18 @@ type Repositories struct {
 	Users  Users
 }
 
-func NewRepositories(db *pgx.Conn) *Repositories {
+func NewRepositories(db *pgxpool.Pool) *Repositories {
 	return &Repositories{
 		Films:  postgresql.NewFilmsRepo(db),
 		Actors: postgresql.MewActorsRepo(db),
 		Users:  postgresql.NewUsersRepo(db),
 	}
 }
+
+//func NewRepositories(db *pgx.Conn) *Repositories {
+//	return &Repositories{
+//		Films:  postgresql.NewFilmsRepo(db),
+//		Actors: postgresql.MewActorsRepo(db),
+//		Users:  postgresql.NewUsersRepo(db),
+//	}
+//}

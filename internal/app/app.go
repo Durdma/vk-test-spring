@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,7 +23,9 @@ func Run(configPath string) {
 
 	logger.Infof("%+v\n", *cfg)
 
-	dbHandler := postgresql.NewConnection(cfg.PostgreSQL)
+	//dbHandler := postgresql.NewConnection(cfg.PostgreSQL)
+
+	dbHandler := postgresql.NewConnectionPool(cfg.PostgreSQL)
 
 	repos := repository.NewRepositories(dbHandler)
 
@@ -47,7 +48,9 @@ func Run(configPath string) {
 
 	<-quit
 
-	if err := dbHandler.Close(context.Background()); err != nil {
-		logger.Error(err.Error())
-	}
+	dbHandler.Close()
+
+	//if err := dbHandler.Close(context.Background()); err != nil {
+	//	logger.Error(err.Error())
+	//}
 }

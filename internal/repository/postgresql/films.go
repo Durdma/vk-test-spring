@@ -4,14 +4,15 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"vk-test-spring/internal/models"
 )
 
 type FilmsRepo struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewFilmsRepo(db *pgx.Conn) *FilmsRepo {
+func NewFilmsRepo(db *pgxpool.Pool) *FilmsRepo {
 	return &FilmsRepo{
 		db: db,
 	}
