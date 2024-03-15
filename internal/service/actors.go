@@ -156,8 +156,8 @@ func (s *ActorsService) GetActorById(ctx context.Context, actorId uuid.UUID) (mo
 	return s.repo.GetActorById(ctx, actorId)
 }
 
-func (s *ActorsService) GetActorByName(ctx context.Context) ([]models.Actor, error) {
-	return nil, nil
+func (s *ActorsService) GetActorByName(ctx context.Context, name string) ([]models.Actor, error) {
+	return s.repo.GetActorsByName(ctx, name)
 }
 
 func (s *ActorsService) addActorFilms(ctx context.Context, actorId uuid.UUID, filmsId []uuid.UUID) error {

@@ -25,11 +25,11 @@ func MewActorsRepo(db *pgxpool.Pool) *ActorsRepo {
 func (r *ActorsRepo) Create(ctx context.Context, actor models.Actor) (uuid.UUID, error) {
 	var id uuid.UUID
 
-	query := `INSERT INTO actors (f_name, s_name, patronymic, birthday, sex) VALUES (@name, @secondName, @patronymic, @bd, @s) RETURNING id`
+	query := `INSERT INTO actors (f_name, s_name, patronymic, birthday, sex) VALUES (@name, @secondName, @patron, @bd, @s) RETURNING id`
 	args := pgx.NamedArgs{
 		"name":       actor.Name,
 		"secondName": actor.SecondName,
-		"patronymic": actor.Patronymic,
+		"patron":     actor.Patronymic,
 		"bd":         actor.DateOfBirth,
 		"s":          actor.Sex,
 	}
@@ -192,7 +192,52 @@ func (r *ActorsRepo) GetAllActors(ctx context.Context) ([]models.Actor, error) {
 }
 
 func (r *ActorsRepo) GetActorsByName(ctx context.Context, name string) ([]models.Actor, error) {
-	return nil, nil
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Query(ctx, `SELECT actors.id, actors.f_name, actors.s_name, actors.patronymic, actors.birthday, actors.sex
+	FROM actors WHERE concat(actors.f_name, ' ', actors.s_name, ' ', actors.patronymic) LIKE '%$1%'`, name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		tx.Rollback(ctx)
+		return nil, err
+	}
+	defer rows.Close()
+
+	actors := make([]models.Actor, 0)
+
+	for rows.Next() {
+		actor := models.Actor{}
+		var t time.Time
+
+		err := rows.Scan(&actor.ID, &actor.Name, &actor.SecondName, &actor.Patronymic, &t, &actor.Sex)
+		if err != nil {
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		actor.DateOfBirth = r.dateTypeToString(t)
+
+		films, err := r.getActorFilms(ctx, actor.ID)
+		if err != nil {
+
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		actor.Films = films
+
+		fmt.Println(actor)
+
+		actors = append(actors, actor)
+	}
+
+	tx.Commit(ctx)
+	return actors, nil
 }
 
 func (r *ActorsRepo) GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error) {

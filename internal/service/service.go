@@ -50,7 +50,7 @@ type Actors interface {
 	DeleteActor(ctx context.Context, actorId uuid.UUID) error
 	GetAllActors(ctx context.Context) ([]models.Actor, error)
 	GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error)
-	GetActorByName(ctx context.Context) ([]models.Actor, error)
+	GetActorByName(ctx context.Context, name string) ([]models.Actor, error)
 }
 
 type UserInput struct {
