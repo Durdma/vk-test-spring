@@ -96,7 +96,7 @@ func (s *FilmsService) DeleteFilm(ctx context.Context, filmId uuid.UUID) error {
 	return s.repo.Delete(ctx, filmId)
 }
 func (s *FilmsService) GetAllFilms(ctx context.Context) ([]models.Film, error) {
-	return nil, nil
+	return s.repo.GetAllFilms(ctx)
 }
 func (s *FilmsService) GetAllFilmsByName(ctx context.Context, name string) ([]models.Film, error) {
 	return nil, nil

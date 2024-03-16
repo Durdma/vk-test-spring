@@ -156,7 +156,20 @@ func (h *FilmsHandler) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FilmsHandler) GetAllFilms(w http.ResponseWriter, r *http.Request) {
+	filmsList, err := h.filmsService.GetAllFilms(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	jsonResponse, err := json.Marshal(filmsList)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
 }
 
 func (h *FilmsHandler) GetFilmsByName(w http.ResponseWriter, r *http.Request) {
