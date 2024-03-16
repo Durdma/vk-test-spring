@@ -157,7 +157,50 @@ func (r *FilmsRepo) Delete(ctx context.Context, filmId uuid.UUID) error {
 }
 
 func (r *FilmsRepo) GetFilmByName(ctx context.Context, name string) ([]models.Film, error) {
-	return nil, nil
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Query(ctx, `SELECT id, name, description, date, rating FROM films
+	WHERE films.name LIKE '%$1%'`, name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			tx.Commit(ctx)
+			return nil, nil
+		}
+
+		tx.Rollback(ctx)
+		return nil, err
+	}
+	defer rows.Close()
+
+	films := make([]models.Film, 0)
+	for rows.Next() {
+		film := models.Film{}
+		var t time.Time
+
+		err := rows.Scan(&film.ID, &film.Name, &film.Description, &t, &film.Rating)
+		if err != nil {
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		film.Date = r.dateTypeToString(t)
+
+		actors, err := r.getFilmActors(ctx, film.ID)
+		if err != nil {
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		film.Actors = actors
+
+		films = append(films, film)
+	}
+
+	tx.Commit(ctx)
+	return films, nil
 }
 
 func (r *FilmsRepo) GetFilmByActor(ctx context.Context, actorName string) ([]models.Film, error) {

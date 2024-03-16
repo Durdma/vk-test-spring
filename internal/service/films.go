@@ -99,7 +99,7 @@ func (s *FilmsService) GetAllFilms(ctx context.Context) ([]models.Film, error) {
 	return s.repo.GetAllFilms(ctx)
 }
 func (s *FilmsService) GetAllFilmsByName(ctx context.Context, name string) ([]models.Film, error) {
-	return nil, nil
+	return s.repo.GetFilmByName(ctx, name)
 }
 func (s *FilmsService) GetAllFilmsByActor(ctx context.Context, actorsName string) ([]models.Film, error) {
 	return nil, nil
