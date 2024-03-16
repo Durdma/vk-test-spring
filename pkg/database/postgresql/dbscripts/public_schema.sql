@@ -35,7 +35,7 @@ CREATE TABLE actors (
     birthday date NOT NULL,
     sex SEX,
     CONSTRAINT actors_pk PRIMARY KEY (id)
-)
+);
 
 CREATE TABLE actors_films (
     fk_actor_id uuid NOT NULL,

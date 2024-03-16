@@ -7,7 +7,7 @@ import (
 	"vk-test-spring/internal/repository"
 )
 
-type FilmInput struct {
+type FilmCreateInput struct {
 	Name        string
 	Description string
 	Date        string
@@ -15,9 +15,19 @@ type FilmInput struct {
 	Actors      []uuid.UUID
 }
 
+type FilmUpdateInput struct {
+	ID          uuid.UUID
+	Name        string
+	Description string
+	Date        string
+	Rating      float64
+	ActorsToAdd []uuid.UUID
+	ActorsToDel []uuid.UUID
+}
+
 type Films interface {
-	AddNewFilm(ctx context.Context, input FilmInput) error
-	EditFilm(ctx context.Context, input FilmInput) error
+	AddNewFilm(ctx context.Context, input FilmCreateInput) error
+	EditFilm(ctx context.Context, input FilmUpdateInput) error
 	DeleteFilm(ctx context.Context, name string) error
 	GetAllFilms(ctx context.Context) ([]models.Film, error)
 	GetAllFilmsByName(ctx context.Context, name string) ([]models.Film, error)

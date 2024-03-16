@@ -2,9 +2,11 @@ package httpv1
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/google/uuid"
 	"net/http"
 	"regexp"
+	"strings"
 	"vk-test-spring/internal/service"
 	"vk-test-spring/pkg/logger"
 )
@@ -13,8 +15,9 @@ var (
 	films           = regexp.MustCompile(`^/films/*$`)
 	filmsId         = regexp.MustCompile(`^/films/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	filmsWithFilter = regexp.MustCompile(`^/films\?(sort=(name|date|rating)&order=(asc|desc))$`)
-	filmsName       = regexp.MustCompile(`^/films\?name=.+$`)
-	filmsActorName  = regexp.MustCompile(`^/films\?actor-name=.+$`)
+	//filmsWithFilterV2 ^/films(\?(sort=(name|date|rating)&order=(asc|desc)))?$
+	filmsName      = regexp.MustCompile(`^/films\?name=.+$`)
+	filmsActorName = regexp.MustCompile(`^/films\?actor-name=.+$`)
 )
 
 type FilmsHandler struct {
@@ -55,7 +58,7 @@ func (h *FilmsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type FilmInput struct {
+type FilmCreateInput struct {
 	Name        string      `json:"name" binding:"required"`
 	Description string      `json:"description" binding:"required"`
 	Date        string      `json:"date" binding:"required"`
@@ -64,13 +67,14 @@ type FilmInput struct {
 }
 
 func (h *FilmsHandler) AddFilm(w http.ResponseWriter, r *http.Request) {
-	var film FilmInput
+	var film FilmCreateInput
 	if err := json.NewDecoder(r.Body).Decode(&film); err != nil {
 		http.Error(w, "error while decoding request body", http.StatusInternalServerError)
 		return
 	}
 
-	err := h.filmsService.AddNewFilm(r.Context(), service.FilmInput{
+	// TODO добавить приведение даты из строки к дата типу
+	err := h.filmsService.AddNewFilm(r.Context(), service.FilmCreateInput{
 		Name:        film.Name,
 		Description: film.Description,
 		Date:        film.Date,
@@ -87,8 +91,52 @@ func (h *FilmsHandler) AddFilm(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *FilmsHandler) UpdateFilm(w http.ResponseWriter, r *http.Request) {
+type FilmUpdateInput struct {
+	Name        string      `json:"name,omitempty"`
+	Description string      `json:"description,omitempty"`
+	Date        string      `json:"date,omitempty"`
+	Rating      float64     `json:"rating,omitempty"`
+	ActorsToAdd []uuid.UUID `json:"actors_to_add,omitempty"`
+	ActorsToDel []uuid.UUID `json:"actors_to_del,omitempty"`
+}
 
+func (h *FilmsHandler) UpdateFilm(w http.ResponseWriter, r *http.Request) {
+	var film FilmUpdateInput
+	if err := json.NewDecoder(r.Body).Decode(&film); err != nil {
+		http.Error(w, "error while decoding request body", http.StatusBadRequest)
+		return
+	}
+
+	filmId, err := h.getFilmIdFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.filmsService.EditFilm(r.Context(), service.FilmUpdateInput{
+		ID:          filmId,
+		Name:        film.Name,
+		Description: film.Description,
+		Date:        film.Date,
+		Rating:      film.Rating,
+		ActorsToAdd: film.ActorsToAdd,
+		ActorsToDel: film.ActorsToDel,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *FilmsHandler) getFilmIdFromRequest(r *http.Request) (uuid.UUID, error) {
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) != 3 {
+		return uuid.UUID{}, errors.New("error while extracting uuid")
+	}
+
+	return uuid.Parse(parts[2])
 }
 
 func (h *FilmsHandler) DeleteFilm(w http.ResponseWriter, r *http.Request) {
