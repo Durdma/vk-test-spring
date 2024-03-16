@@ -9,15 +9,13 @@ import (
 )
 
 type Films interface {
-	Create(ctx context.Context, film models.Film) (uuid.UUID, error)
+	Create(ctx context.Context, film models.Film, actors []uuid.UUID) error
 	Update(ctx context.Context, film models.Film, actorsToAdd []uuid.UUID, actorsToDel []uuid.UUID) error
 	Delete(ctx context.Context, filmId uuid.UUID) error
 	GetFilmByName(ctx context.Context, name string) ([]models.Film, error)
 	GetFilmByActor(ctx context.Context, actorName string) ([]models.Film, error)
 	GetAllFilms(ctx context.Context) ([]models.Film, error)
-	InsertIntoActorFilm(ctx context.Context, actorId uuid.UUID, filmId uuid.UUID) error
 	GetFilmById(ctx context.Context, filmId uuid.UUID) (models.Film, error)
-	DeleteFromActorFilm(ctx context.Context, filmId uuid.UUID, actorId uuid.UUID) error
 }
 
 type Actors interface {

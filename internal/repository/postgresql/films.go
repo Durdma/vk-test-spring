@@ -21,7 +21,7 @@ func NewFilmsRepo(db *pgxpool.Pool) *FilmsRepo {
 	}
 }
 
-func (r *FilmsRepo) Create(ctx context.Context, film models.Film) (uuid.UUID, error) {
+func (r *FilmsRepo) Create(ctx context.Context, film models.Film, actors []uuid.UUID) error {
 	var id uuid.UUID
 
 	query := `INSERT INTO films (name, description, date, rating) VALUES (@n, @des, @d, @rate) RETURNING id`
@@ -34,58 +34,16 @@ func (r *FilmsRepo) Create(ctx context.Context, film models.Film) (uuid.UUID, er
 
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return uuid.Nil, err
+		return err
 	}
 
 	err = r.db.QueryRow(ctx, query, args).Scan(&id)
 	if err != nil {
 		tx.Rollback(ctx)
-		return uuid.Nil, err
-	}
-
-	tx.Commit(ctx)
-	return id, err
-}
-
-func (r *FilmsRepo) InsertIntoActorFilm(ctx context.Context, actorId uuid.UUID, filmId uuid.UUID) error {
-	query := `INSERT INTO actors_films (fk_actor_id, fk_film_id) VALUES (@actor, @film)`
-	args := pgx.NamedArgs{
-		"actor": actorId,
-		"film":  filmId,
-	}
-
-	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
 		return err
 	}
 
-	_, err = r.db.Exec(ctx, query, args)
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
-	}
-
-	tx.Commit(ctx)
-	return err
-}
-
-func (r *FilmsRepo) DeleteFromActorFilm(ctx context.Context, filmId uuid.UUID, actorId uuid.UUID) error {
-	query := `DELETE FROM actors_films WHERE fk_actor_id = @actorId AND fk_film_id = @filmId`
-	args := pgx.NamedArgs{
-		"actorId": actorId,
-		"filmId":  filmId,
-	}
-
-	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-
-	_, err = r.db.Exec(ctx, query, args)
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
-	}
+	err = r.insertIntoActorFilm(ctx, actors, id)
 
 	tx.Commit(ctx)
 	return err
@@ -112,24 +70,16 @@ func (r *FilmsRepo) Update(ctx context.Context, film models.Film, actorsToAdd []
 		return err
 	}
 
-	if len(actorsToAdd) > 0 {
-		for _, a := range actorsToAdd {
-			err := r.InsertIntoActorFilm(ctx, a, film.ID)
-			if err != nil {
-				tx.Rollback(ctx)
-				return err
-			}
-		}
+	err = r.insertIntoActorFilm(ctx, actorsToAdd, film.ID)
+	if err != nil {
+		tx.Rollback(ctx)
+		return err
 	}
 
-	if len(actorsToDel) > 0 {
-		for _, a := range actorsToDel {
-			err := r.DeleteFromActorFilm(ctx, film.ID, a)
-			if err != nil {
-				tx.Rollback(ctx)
-				return err
-			}
-		}
+	err = r.deleteFromActorFilm(ctx, actorsToDel, film.ID)
+	if err != nil {
+		tx.Rollback(ctx)
+		return err
 	}
 
 	tx.Commit(ctx)
@@ -155,6 +105,53 @@ func (r *FilmsRepo) Delete(ctx context.Context, filmId uuid.UUID) error {
 
 	tx.Commit(ctx)
 	return err
+}
+
+func (r *FilmsRepo) GetAllFilms(ctx context.Context) ([]models.Film, error) {
+	query := fmt.Sprintf("SELECT id, name, description, date, rating FROM films ORDER BY %s %s", ctx.Value("sort"), ctx.Value("order"))
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+
+		tx.Rollback(ctx)
+		return nil, err
+	}
+	defer rows.Close()
+
+	films := make([]models.Film, 0)
+	for rows.Next() {
+		film := models.Film{}
+		var t time.Time
+
+		err := rows.Scan(&film.ID, &film.Name, &film.Description, &t, &film.Rating)
+		if err != nil {
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		film.Date = r.dateTypeToString(t)
+
+		actors, err := r.getFilmActors(ctx, film.ID)
+		if err != nil {
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		film.Actors = actors
+
+		films = append(films, film)
+	}
+
+	tx.Commit(ctx)
+	return films, err
 }
 
 func (r *FilmsRepo) GetFilmByName(ctx context.Context, name string) ([]models.Film, error) {
@@ -254,55 +251,6 @@ func (r *FilmsRepo) GetFilmByActor(ctx context.Context, actorName string) ([]mod
 	return films, err
 }
 
-func (r *FilmsRepo) GetAllFilms(ctx context.Context) ([]models.Film, error) {
-	fmt.Println(ctx.Value("sort"), ctx.Value("order"))
-
-	query := fmt.Sprintf("SELECT id, name, description, date, rating FROM films ORDER BY %s %s", ctx.Value("sort"), ctx.Value("order"))
-
-	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := r.db.Query(ctx, query)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-
-		tx.Rollback(ctx)
-		return nil, err
-	}
-	defer rows.Close()
-
-	films := make([]models.Film, 0)
-	for rows.Next() {
-		film := models.Film{}
-		var t time.Time
-
-		err := rows.Scan(&film.ID, &film.Name, &film.Description, &t, &film.Rating)
-		if err != nil {
-			tx.Rollback(ctx)
-			return nil, err
-		}
-
-		film.Date = r.dateTypeToString(t)
-
-		actors, err := r.getFilmActors(ctx, film.ID)
-		if err != nil {
-			tx.Rollback(ctx)
-			return nil, err
-		}
-
-		film.Actors = actors
-
-		films = append(films, film)
-	}
-
-	tx.Commit(ctx)
-	return films, err
-}
-
 func (r *FilmsRepo) GetFilmById(ctx context.Context, filmId uuid.UUID) (models.Film, error) {
 	var film models.Film
 	var t time.Time
@@ -336,6 +284,64 @@ func (r *FilmsRepo) GetFilmById(ctx context.Context, filmId uuid.UUID) (models.F
 
 	tx.Commit(ctx)
 	return film, err
+}
+
+func (r *FilmsRepo) insertIntoActorFilm(ctx context.Context, actorsId []uuid.UUID, filmId uuid.UUID) error {
+	query := `INSERT INTO actors_films (fk_actor_id, fk_film_id) VALUES (@actor, @film)`
+
+	if len(actorsId) > 0 {
+		tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+		if err != nil {
+			return err
+		}
+
+		for _, a := range actorsId {
+			args := pgx.NamedArgs{
+				"actor": a,
+				"film":  filmId,
+			}
+
+			_, err := r.db.Exec(ctx, query, args)
+			if err != nil {
+				tx.Rollback(ctx)
+				return err
+			}
+		}
+
+		tx.Commit(ctx)
+		return err
+	}
+
+	return nil
+}
+
+func (r *FilmsRepo) deleteFromActorFilm(ctx context.Context, actorsId []uuid.UUID, filmId uuid.UUID) error {
+	query := `DELETE FROM actors_films WHERE fk_actor_id = @actorId AND fk_film_id = @filmId`
+
+	if len(actorsId) > 0 {
+		tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+		if err != nil {
+			return err
+		}
+
+		for _, a := range actorsId {
+			args := pgx.NamedArgs{
+				"actorId": a,
+				"filmId":  filmId,
+			}
+
+			_, err := r.db.Exec(ctx, query, args)
+			if err != nil {
+				tx.Rollback(ctx)
+				return err
+			}
+		}
+
+		tx.Commit(ctx)
+		return err
+	}
+
+	return nil
 }
 
 func (r *FilmsRepo) getFilmActors(ctx context.Context, filmId uuid.UUID) ([]models.FilmActors, error) {

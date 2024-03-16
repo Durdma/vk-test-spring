@@ -29,14 +29,10 @@ func (s *FilmsService) AddNewFilm(ctx context.Context, input FilmCreateInput) er
 		Rating:      input.Rating,
 	}
 
-	id, err := s.repo.Create(ctx, film)
+	err := s.repo.Create(ctx, film, input.Actors)
 	if err != nil {
 		logger.Error("service 1")
 		return err
-	}
-
-	if len(input.Actors) > 0 {
-		err = s.addFilmActors(ctx, id, input.Actors)
 	}
 
 	return err
@@ -89,17 +85,6 @@ func (s *FilmsService) GetAllFilmsByActor(ctx context.Context, actorsName string
 	return s.repo.GetFilmByActor(ctx, actorsName)
 }
 
-func (s *FilmsService) addFilmActors(ctx context.Context, filmId uuid.UUID, actorsId []uuid.UUID) error {
-	for _, a := range actorsId {
-		err := s.repo.InsertIntoActorFilm(ctx, a, filmId)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (s *FilmsService) mergeChanges(film models.Film, oldFilm models.Film) (models.Film, error) {
 	if film.Name == "" {
 		film.Name = oldFilm.Name
@@ -142,17 +127,6 @@ func (s *FilmsService) parseActorsLists(currentActors []models.FilmActors, actor
 	for _, a := range actorsToDel {
 		if slices.Contains(currentActorsUUID, a) {
 			return errors.New(fmt.Sprintf("actors_to_del contains actor_id that not in film_actors: %v", a))
-		}
-	}
-
-	return nil
-}
-
-func (s *FilmsService) removeFilmActors(ctx context.Context, filmId uuid.UUID, actorsId []uuid.UUID) error {
-	for _, a := range actorsId {
-		err := s.repo.DeleteFromActorFilm(ctx, filmId, a)
-		if err != nil {
-			return err
 		}
 	}
 

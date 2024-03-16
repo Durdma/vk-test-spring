@@ -46,6 +46,10 @@ func (r *ActorsRepo) Create(ctx context.Context, actor models.Actor, actorFilms 
 	}
 
 	err = r.insertIntoActorFilms(ctx, id, actorFilms)
+	if err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
 
 	tx.Commit(ctx)
 	return err
@@ -123,13 +127,13 @@ func (r *ActorsRepo) GetAllActors(ctx context.Context) ([]models.Actor, error) {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
+
 		tx.Rollback(ctx)
 		return nil, err
 	}
 	defer rows.Close()
 
 	actors := make([]models.Actor, 0)
-
 	for rows.Next() {
 		actor := models.Actor{}
 		var t time.Time
@@ -144,7 +148,6 @@ func (r *ActorsRepo) GetAllActors(ctx context.Context) ([]models.Actor, error) {
 
 		films, err := r.getActorFilms(ctx, actor.ID)
 		if err != nil {
-
 			tx.Rollback(ctx)
 			return nil, err
 		}
@@ -178,7 +181,6 @@ func (r *ActorsRepo) GetActorsByName(ctx context.Context, name string) ([]models
 	defer rows.Close()
 
 	actors := make([]models.Actor, 0)
-
 	for rows.Next() {
 		actor := models.Actor{}
 		var t time.Time
@@ -193,7 +195,6 @@ func (r *ActorsRepo) GetActorsByName(ctx context.Context, name string) ([]models
 
 		films, err := r.getActorFilms(ctx, actor.ID)
 		if err != nil {
-
 			tx.Rollback(ctx)
 			return nil, err
 		}
@@ -218,12 +219,10 @@ func (r *ActorsRepo) GetActorById(ctx context.Context, actorId uuid.UUID) (model
 		return models.Actor{}, err
 	}
 
-	err = r.db.QueryRow(ctx, "SELECT id, f_name, s_name, patronymic, birthday, sex "+
-		"FROM actors WHERE id=$1", actorId).Scan(
+	err = r.db.QueryRow(ctx, `SELECT id, f_name, s_name, patronymic, birthday, sex 
+	FROM actors WHERE id=$1`, actorId).Scan(
 		&actor.ID, &actor.Name, &actor.SecondName, &actor.Patronymic, &t, &actor.Sex)
 	if err != nil {
-		logger.Errorf("error 1 in GetActorById: %v", err)
-
 		tx.Rollback(ctx)
 		return models.Actor{}, err
 	}
@@ -233,10 +232,10 @@ func (r *ActorsRepo) GetActorById(ctx context.Context, actorId uuid.UUID) (model
 	films, err := r.getActorFilms(ctx, actorId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			tx.Commit(ctx)
 			return actor, nil
 		}
 
-		logger.Errorf("error 2 in GetActorById: %v", err)
 		tx.Rollback(ctx)
 		return models.Actor{}, err
 	}
@@ -304,10 +303,6 @@ func (r *ActorsRepo) deleteFromActorFilms(ctx context.Context, actorId uuid.UUID
 	return nil
 }
 
-func (r *ActorsRepo) dateTypeToString(t time.Time) string {
-	return t.Format(time.DateOnly)
-}
-
 func (r *ActorsRepo) getActorFilms(ctx context.Context, actorId uuid.UUID) ([]models.ActorFilm, error) {
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -347,4 +342,8 @@ func (r *ActorsRepo) getActorFilms(ctx context.Context, actorId uuid.UUID) ([]mo
 
 	tx.Commit(ctx)
 	return films, err
+}
+
+func (r *ActorsRepo) dateTypeToString(t time.Time) string {
+	return t.Format(time.DateOnly)
 }
