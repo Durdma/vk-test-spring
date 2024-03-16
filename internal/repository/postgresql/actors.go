@@ -93,7 +93,7 @@ func (r *ActorsRepo) DeleteFromActorFilm(ctx context.Context, actorId uuid.UUID,
 	return err
 }
 
-func (r *ActorsRepo) Edit(ctx context.Context, actor models.Actor) error {
+func (r *ActorsRepo) Edit(ctx context.Context, actor models.Actor, filmsToAdd []uuid.UUID, filmsToDel []uuid.UUID) error {
 	query := `UPDATE actors SET f_name = @name, s_name = @secondName, patronymic = @patronymic, birthday = @bd, sex = @s WHERE id = @actor_id`
 	args := pgx.NamedArgs{
 		"name":       actor.Name,
@@ -115,8 +115,28 @@ func (r *ActorsRepo) Edit(ctx context.Context, actor models.Actor) error {
 		return err
 	}
 
-	logger.Errorf("error in Edit: %v", err)
+	if len(filmsToAdd) > 0 {
+		for _, f := range filmsToAdd {
+			err := r.InsertIntoActorFilm(ctx, actor.ID, f)
+			if err != nil {
+				tx.Rollback(ctx)
+				return err
+			}
+		}
+	}
 
+	if len(filmsToDel) > 0 {
+		for _, f := range filmsToDel {
+			err := r.DeleteFromActorFilm(ctx, actor.ID, f)
+			if err != nil {
+				tx.Rollback(ctx)
+				return err
+			}
+		}
+	}
+
+	logger.Errorf("error in Edit: %v", err)
+	tx.Commit(ctx)
 	return err
 }
 
@@ -320,5 +340,5 @@ func (r *ActorsRepo) getActorFilms(ctx context.Context, actorId uuid.UUID) ([]mo
 	}
 
 	tx.Commit(ctx)
-	return films, nil
+	return films, err
 }

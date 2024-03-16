@@ -63,29 +63,15 @@ func (s *ActorsService) UpdateActor(ctx context.Context, input ActorUpdateInput)
 	}
 
 	if len(input.FilmsToAdd) > 0 || len(input.FilmsToDel) > 0 {
-		err = s.parseFilmsLists(actor.Films, input.FilmsToAdd, input.FilmsToDel)
+		err = s.parseFilmsLists(oldActor.Films, input.FilmsToAdd, input.FilmsToDel)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = s.repo.Edit(ctx, actor)
+	err = s.repo.Edit(ctx, actor, input.FilmsToAdd, input.FilmsToDel)
 	if err != nil {
 		return err
-	}
-
-	if len(input.FilmsToAdd) > 0 {
-		err = s.addActorFilms(ctx, actor.ID, input.FilmsToAdd)
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(input.FilmsToDel) > 0 {
-		err = s.removeActorFilms(ctx, actor.ID, input.FilmsToDel)
-		if err != nil {
-			return err
-		}
 	}
 
 	return err
