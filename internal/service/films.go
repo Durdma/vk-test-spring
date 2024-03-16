@@ -102,7 +102,8 @@ func (s *FilmsService) GetAllFilmsByName(ctx context.Context, name string) ([]mo
 	return s.repo.GetFilmByName(ctx, name)
 }
 func (s *FilmsService) GetAllFilmsByActor(ctx context.Context, actorsName string) ([]models.Film, error) {
-	return nil, nil
+
+	return s.repo.GetFilmByActor(ctx, actorsName)
 }
 
 func (s *FilmsService) mergeChanges(film models.Film, oldFilm models.Film) (models.Film, error) {

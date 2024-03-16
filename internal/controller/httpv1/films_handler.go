@@ -197,5 +197,25 @@ func (h *FilmsHandler) GetFilmsByName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FilmsHandler) GetFilmsByActor(w http.ResponseWriter, r *http.Request) {
+	var actorName string
+	err := json.NewDecoder(r.Body).Decode(&actorName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	films, err := h.filmsService.GetAllFilmsByActor(r.Context(), actorName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(films)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
 }
