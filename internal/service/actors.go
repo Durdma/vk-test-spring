@@ -29,13 +29,9 @@ func (s *ActorsService) AddActor(ctx context.Context, input ActorCreateInput) er
 		DateOfBirth: input.DateOfBirth,
 	}
 
-	id, err := s.repo.Create(ctx, actor)
+	err := s.repo.Create(ctx, actor, input.Films)
 	if err != nil {
 		return err
-	}
-
-	if len(input.Films) > 0 {
-		err = s.addActorFilms(ctx, id, input.Films)
 	}
 
 	return err
@@ -140,28 +136,6 @@ func (s *ActorsService) parseFilmsLists(currentFilms []models.ActorFilm, filmsTo
 		if slices.Contains(currentFilmsUUID, f) {
 			fmt.Println(slices.Contains(currentFilmsUUID, f))
 			return errors.New(fmt.Sprintf("films_to_del contains film_id that not in actors_films: %v", f))
-		}
-	}
-
-	return nil
-}
-
-func (s *ActorsService) addActorFilms(ctx context.Context, actorId uuid.UUID, filmsId []uuid.UUID) error {
-	for _, f := range filmsId {
-		err := s.repo.InsertIntoActorFilm(ctx, actorId, f)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *ActorsService) removeActorFilms(ctx context.Context, actorId uuid.UUID, filmsId []uuid.UUID) error {
-	for _, f := range filmsId {
-		err := s.repo.DeleteFromActorFilm(ctx, actorId, f)
-		if err != nil {
-			return err
 		}
 	}
 

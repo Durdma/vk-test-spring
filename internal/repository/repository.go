@@ -21,13 +21,11 @@ type Films interface {
 }
 
 type Actors interface {
-	Create(ctx context.Context, actor models.Actor) (uuid.UUID, error)
+	Create(ctx context.Context, actor models.Actor, actorFilms []uuid.UUID) error
 	Edit(ctx context.Context, actor models.Actor, filmsToAdd []uuid.UUID, filmsToDel []uuid.UUID) error
 	Delete(ctx context.Context, actorId uuid.UUID) error
 	GetAllActors(ctx context.Context) ([]models.Actor, error)
 	GetActorsByName(ctx context.Context, name string) ([]models.Actor, error)
-	InsertIntoActorFilm(ctx context.Context, actorId uuid.UUID, filmId uuid.UUID) error
-	DeleteFromActorFilm(ctx context.Context, actorId uuid.UUID, filmId uuid.UUID) error
 	GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error)
 }
 
