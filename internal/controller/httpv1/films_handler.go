@@ -1,6 +1,7 @@
 package httpv1
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
@@ -12,12 +13,11 @@ import (
 )
 
 var (
-	filmsRe         = regexp.MustCompile(`^/films/*$`)
-	filmsIdRe       = regexp.MustCompile(`^/films/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-	filmsWithFilter = regexp.MustCompile(`^/films\?(sort=(name|date|rating)&order=(asc|desc))$`)
-	//filmsWithFilterV2 ^/films(\?(sort=(name|date|rating)&order=(asc|desc)))?$
-	filmsNameRe      = regexp.MustCompile(`^/films\?name=.+$`)
-	filmsActorNameRe = regexp.MustCompile(`^/films\?actor-name=.+$`)
+	filmsRe           = regexp.MustCompile(`^/films/*$`)
+	filmsIdRe         = regexp.MustCompile(`^/films/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	filmsWithFilterRe = regexp.MustCompile(`^/films(\?(sort=(name|date|rating)&order=(asc|desc)))?$`)
+	filmsNameRe       = regexp.MustCompile(`^/films\?name=.+$`)
+	filmsActorNameRe  = regexp.MustCompile(`^/films\?actor-name=.+$`)
 )
 
 type FilmsHandler struct {
@@ -32,7 +32,7 @@ func NewFilmsHandler(filmsService service.Films) *FilmsHandler {
 
 func (h *FilmsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
-	case r.Method == http.MethodGet && filmsRe.MatchString(r.URL.Path):
+	case r.Method == http.MethodGet && filmsWithFilterRe.MatchString(r.URL.Path):
 		h.GetAllFilms(w, r)
 		return
 	case r.Method == http.MethodGet && filmsNameRe.MatchString(r.URL.Path):
@@ -155,7 +155,28 @@ func (h *FilmsHandler) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *FilmsHandler) getSortParams(r *http.Request) *http.Request {
+	params := r.URL.Query()
+	sortField := params.Get("sort")
+	sortOrder := params.Get("order")
+	sortOrder = strings.ToUpper(sortOrder)
+
+	if sortField == "" && sortOrder == "" {
+		ctx := context.WithValue(r.Context(), "sort", "rating")
+		ctx = context.WithValue(ctx, "order", "desc")
+
+		return r.WithContext(ctx)
+	}
+
+	ctx := context.WithValue(r.Context(), "sort", sortField)
+	ctx = context.WithValue(ctx, "order", sortOrder)
+
+	return r.WithContext(ctx)
+}
+
 func (h *FilmsHandler) GetAllFilms(w http.ResponseWriter, r *http.Request) {
+	r = h.getSortParams(r)
+
 	filmsList, err := h.filmsService.GetAllFilms(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

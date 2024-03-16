@@ -87,7 +87,7 @@ func (h *Handler) usersAuth(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), "user_id", userId)
-		ctx = context.WithValue(r.Context(), "role", role)
+		ctx = context.WithValue(ctx, "role", role)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

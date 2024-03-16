@@ -3,6 +3,7 @@ package postgresql
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -254,7 +255,9 @@ func (r *FilmsRepo) GetFilmByActor(ctx context.Context, actorName string) ([]mod
 }
 
 func (r *FilmsRepo) GetAllFilms(ctx context.Context) ([]models.Film, error) {
-	query := `SELECT id, name, description, date, rating FROM films`
+	fmt.Println(ctx.Value("sort"), ctx.Value("order"))
+
+	query := fmt.Sprintf("SELECT id, name, description, date, rating FROM films ORDER BY %s %s", ctx.Value("sort"), ctx.Value("order"))
 
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
