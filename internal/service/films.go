@@ -42,18 +42,6 @@ func (s *FilmsService) AddNewFilm(ctx context.Context, input FilmCreateInput) er
 	return err
 }
 
-func (s *FilmsService) addFilmActors(ctx context.Context, filmId uuid.UUID, actorsId []uuid.UUID) error {
-	for _, a := range actorsId {
-		err := s.repo.InsertIntoActorFilm(ctx, a, filmId)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// TODO WE ARE HERE
 func (s *FilmsService) EditFilm(ctx context.Context, input FilmUpdateInput) error {
 	film := models.Film{
 		ID:          input.ID,
@@ -72,11 +60,6 @@ func (s *FilmsService) EditFilm(ctx context.Context, input FilmUpdateInput) erro
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("===")
-	fmt.Println(film.ID)
-	fmt.Println(oldFilm.ID)
-	fmt.Println("===")
 
 	if len(input.ActorsToAdd) > 0 || len(input.ActorsToDel) > 0 {
 		err = s.parseActorsLists(oldFilm.Actors, input.ActorsToAdd, input.ActorsToDel)
@@ -104,6 +87,17 @@ func (s *FilmsService) GetAllFilmsByName(ctx context.Context, name string) ([]mo
 func (s *FilmsService) GetAllFilmsByActor(ctx context.Context, actorsName string) ([]models.Film, error) {
 
 	return s.repo.GetFilmByActor(ctx, actorsName)
+}
+
+func (s *FilmsService) addFilmActors(ctx context.Context, filmId uuid.UUID, actorsId []uuid.UUID) error {
+	for _, a := range actorsId {
+		err := s.repo.InsertIntoActorFilm(ctx, a, filmId)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *FilmsService) mergeChanges(film models.Film, oldFilm models.Film) (models.Film, error) {
