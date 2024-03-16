@@ -77,6 +77,23 @@ func (s *ActorsService) UpdateActor(ctx context.Context, input ActorUpdateInput)
 	return err
 }
 
+func (s *ActorsService) DeleteActor(ctx context.Context, actorId uuid.UUID) error {
+	return s.repo.Delete(ctx, actorId)
+}
+
+func (s *ActorsService) GetAllActors(ctx context.Context) ([]models.Actor, error) {
+	return s.repo.GetAllActors(ctx)
+}
+
+func (s *ActorsService) GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error) {
+
+	return s.repo.GetActorById(ctx, actorId)
+}
+
+func (s *ActorsService) GetActorByName(ctx context.Context, name string) ([]models.Actor, error) {
+	return s.repo.GetActorsByName(ctx, name)
+}
+
 func (s *ActorsService) mergeChanges(actor models.Actor, oldActor models.Actor) (models.Actor, error) {
 	if actor.Name == "" {
 		actor.Name = oldActor.Name
@@ -127,23 +144,6 @@ func (s *ActorsService) parseFilmsLists(currentFilms []models.ActorFilm, filmsTo
 	}
 
 	return nil
-}
-
-func (s *ActorsService) DeleteActor(ctx context.Context, actorId uuid.UUID) error {
-	return s.repo.Delete(ctx, actorId)
-}
-
-func (s *ActorsService) GetAllActors(ctx context.Context) ([]models.Actor, error) {
-	return s.repo.GetAllActors(ctx)
-}
-
-func (s *ActorsService) GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error) {
-
-	return s.repo.GetActorById(ctx, actorId)
-}
-
-func (s *ActorsService) GetActorByName(ctx context.Context, name string) ([]models.Actor, error) {
-	return s.repo.GetActorsByName(ctx, name)
 }
 
 func (s *ActorsService) addActorFilms(ctx context.Context, actorId uuid.UUID, filmsId []uuid.UUID) error {
