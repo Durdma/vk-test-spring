@@ -135,8 +135,25 @@ func (r *FilmsRepo) Update(ctx context.Context, film models.Film, actorsToAdd []
 	return err
 }
 
-func (r *FilmsRepo) Delete(ctx context.Context, filmId string) error {
-	return nil
+func (r *FilmsRepo) Delete(ctx context.Context, filmId uuid.UUID) error {
+	query := `DELETE FROM films WHERE id=@filmId`
+	args := pgx.NamedArgs{
+		"filmId": filmId,
+	}
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.Exec(ctx, query, args)
+	if err != nil {
+		tx.Rollback(ctx)
+		return err
+	}
+
+	tx.Commit(ctx)
+	return err
 }
 
 func (r *FilmsRepo) GetFilmByName(ctx context.Context, name string) ([]models.Film, error) {

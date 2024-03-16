@@ -28,7 +28,7 @@ type FilmUpdateInput struct {
 type Films interface {
 	AddNewFilm(ctx context.Context, input FilmCreateInput) error
 	EditFilm(ctx context.Context, input FilmUpdateInput) error
-	DeleteFilm(ctx context.Context, name string) error
+	DeleteFilm(ctx context.Context, filmId uuid.UUID) error
 	GetAllFilms(ctx context.Context) ([]models.Film, error)
 	GetAllFilmsByName(ctx context.Context, name string) ([]models.Film, error)
 	GetAllFilmsByActor(ctx context.Context, actorsName string) ([]models.Film, error)

@@ -14,6 +14,7 @@ var (
 	actorsRe    = regexp.MustCompile(`^/actors/*$`)
 	actorIdRe   = regexp.MustCompile(`^/actors/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	actorNameRe = regexp.MustCompile(`^/actors\?name=.+$`)
+	// actorNameReV2 ^/actors(\?name=.+)?$
 )
 
 type ActorsHandler struct {
@@ -107,6 +108,7 @@ func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO добавить приведение даты из строки к дата типу
 	err = h.actorsService.UpdateActor(r.Context(), service.ActorUpdateInput{
 		ID:          actorId,
 		Name:        actor.Name,

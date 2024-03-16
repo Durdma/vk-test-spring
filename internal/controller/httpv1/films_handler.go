@@ -12,12 +12,12 @@ import (
 )
 
 var (
-	films           = regexp.MustCompile(`^/films/*$`)
-	filmsId         = regexp.MustCompile(`^/films/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	filmsRe         = regexp.MustCompile(`^/films/*$`)
+	filmsIdRe       = regexp.MustCompile(`^/films/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	filmsWithFilter = regexp.MustCompile(`^/films\?(sort=(name|date|rating)&order=(asc|desc))$`)
 	//filmsWithFilterV2 ^/films(\?(sort=(name|date|rating)&order=(asc|desc)))?$
-	filmsName      = regexp.MustCompile(`^/films\?name=.+$`)
-	filmsActorName = regexp.MustCompile(`^/films\?actor-name=.+$`)
+	filmsNameRe      = regexp.MustCompile(`^/films\?name=.+$`)
+	filmsActorNameRe = regexp.MustCompile(`^/films\?actor-name=.+$`)
 )
 
 type FilmsHandler struct {
@@ -32,24 +32,24 @@ func NewFilmsHandler(filmsService service.Films) *FilmsHandler {
 
 func (h *FilmsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
-	case r.Method == http.MethodGet && films.MatchString(r.URL.Path):
+	case r.Method == http.MethodGet && filmsRe.MatchString(r.URL.Path):
 		h.GetAllFilms(w, r)
 		return
-	case r.Method == http.MethodGet && filmsName.MatchString(r.URL.Path):
+	case r.Method == http.MethodGet && filmsNameRe.MatchString(r.URL.Path):
 		h.GetFilmsByName(w, r)
 		return
-	case r.Method == http.MethodGet && filmsActorName.MatchString(r.URL.Path):
+	case r.Method == http.MethodGet && filmsActorNameRe.MatchString(r.URL.Path):
 		h.GetFilmsByActor(w, r)
 		return
-	case r.Method == http.MethodPost && films.MatchString(r.URL.Path) &&
+	case r.Method == http.MethodPost && filmsRe.MatchString(r.URL.Path) &&
 		r.Context().Value("role").(string) == "администратор":
 		h.AddFilm(w, r)
 		return
-	case r.Method == http.MethodPatch && filmsId.MatchString(r.URL.Path) &&
+	case r.Method == http.MethodPatch && filmsIdRe.MatchString(r.URL.Path) &&
 		r.Context().Value("role").(string) == "администратор":
 		h.UpdateFilm(w, r)
 		return
-	case r.Method == http.MethodDelete && filmsId.MatchString(r.URL.Path) &&
+	case r.Method == http.MethodDelete && filmsIdRe.MatchString(r.URL.Path) &&
 		r.Context().Value("role").(string) == "администратор":
 		h.DeleteFilm(w, r)
 		return
@@ -140,7 +140,19 @@ func (h *FilmsHandler) getFilmIdFromRequest(r *http.Request) (uuid.UUID, error) 
 }
 
 func (h *FilmsHandler) DeleteFilm(w http.ResponseWriter, r *http.Request) {
+	filmId, err := h.getFilmIdFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
+	err = h.filmsService.DeleteFilm(r.Context(), filmId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *FilmsHandler) GetAllFilms(w http.ResponseWriter, r *http.Request) {

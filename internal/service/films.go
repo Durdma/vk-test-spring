@@ -92,8 +92,8 @@ func (s *FilmsService) EditFilm(ctx context.Context, input FilmUpdateInput) erro
 
 	return err
 }
-func (s *FilmsService) DeleteFilm(ctx context.Context, name string) error {
-	return nil
+func (s *FilmsService) DeleteFilm(ctx context.Context, filmId uuid.UUID) error {
+	return s.repo.Delete(ctx, filmId)
 }
 func (s *FilmsService) GetAllFilms(ctx context.Context) ([]models.Film, error) {
 	return nil, nil
