@@ -127,15 +127,6 @@ func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *ActorsHandler) getActorIdFromRequest(r *http.Request) (uuid.UUID, error) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) != 3 {
-		return uuid.UUID{}, errors.New("error while extracting uuid")
-	}
-
-	return uuid.Parse(parts[2])
-}
-
 func (h *ActorsHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 	actorId, err := h.getActorIdFromRequest(r)
 	if err != nil {
@@ -214,4 +205,13 @@ func (h *ActorsHandler) GetActorByName(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
+}
+
+func (h *ActorsHandler) getActorIdFromRequest(r *http.Request) (uuid.UUID, error) {
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) != 3 {
+		return uuid.UUID{}, errors.New("error while extracting uuid")
+	}
+
+	return uuid.Parse(parts[2])
 }
