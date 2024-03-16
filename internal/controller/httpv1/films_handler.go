@@ -130,15 +130,6 @@ func (h *FilmsHandler) UpdateFilm(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *FilmsHandler) getFilmIdFromRequest(r *http.Request) (uuid.UUID, error) {
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) != 3 {
-		return uuid.UUID{}, errors.New("error while extracting uuid")
-	}
-
-	return uuid.Parse(parts[2])
-}
-
 func (h *FilmsHandler) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 	filmId, err := h.getFilmIdFromRequest(r)
 	if err != nil {
@@ -153,25 +144,6 @@ func (h *FilmsHandler) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func (h *FilmsHandler) getSortParams(r *http.Request) *http.Request {
-	params := r.URL.Query()
-	sortField := params.Get("sort")
-	sortOrder := params.Get("order")
-	sortOrder = strings.ToUpper(sortOrder)
-
-	if sortField == "" && sortOrder == "" {
-		ctx := context.WithValue(r.Context(), "sort", "rating")
-		ctx = context.WithValue(ctx, "order", "desc")
-
-		return r.WithContext(ctx)
-	}
-
-	ctx := context.WithValue(r.Context(), "sort", sortField)
-	ctx = context.WithValue(ctx, "order", sortOrder)
-
-	return r.WithContext(ctx)
 }
 
 func (h *FilmsHandler) GetAllFilms(w http.ResponseWriter, r *http.Request) {
@@ -239,4 +211,32 @@ func (h *FilmsHandler) GetFilmsByActor(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
+}
+
+func (h *FilmsHandler) getFilmIdFromRequest(r *http.Request) (uuid.UUID, error) {
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) != 3 {
+		return uuid.UUID{}, errors.New("error while extracting uuid")
+	}
+
+	return uuid.Parse(parts[2])
+}
+
+func (h *FilmsHandler) getSortParams(r *http.Request) *http.Request {
+	params := r.URL.Query()
+	sortField := params.Get("sort")
+	sortOrder := params.Get("order")
+	sortOrder = strings.ToUpper(sortOrder)
+
+	if sortField == "" && sortOrder == "" {
+		ctx := context.WithValue(r.Context(), "sort", "rating")
+		ctx = context.WithValue(ctx, "order", "desc")
+
+		return r.WithContext(ctx)
+	}
+
+	ctx := context.WithValue(r.Context(), "sort", sortField)
+	ctx = context.WithValue(ctx, "order", sortOrder)
+
+	return r.WithContext(ctx)
 }
