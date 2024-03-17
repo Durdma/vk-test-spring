@@ -15,34 +15,38 @@ import (
 )
 
 func Run(configPath string) {
+	// TODO add config for logger
+	logs := logger.InitLogs("../../pkg/logger/logger.json", 5, 3, 30)
+
+	logs.Info().Msg("Starting app")
+
 	cfg, err := config.Init(configPath)
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
-	logger.Infof("%+v\n", *cfg)
-
-	//dbHandler := postgresql.NewConnection(cfg.PostgreSQL)
-
 	dbHandler := postgresql.NewConnectionPool(cfg.PostgreSQL)
+	logs.Info().Msg("Initialized connection pool DB")
 
 	repos := repository.NewRepositories(dbHandler)
+	logs.Info().Msg("Initialized repos")
 
 	services := service.NewServices(repos)
+	logs.Info().Msg("Initialized services")
 
 	handlers := controller.NewHandler()
-	mux := handlers.Init(services)
+	mux := handlers.Init(services, logs)
+	logs.Info().Msg("Initialized handlers")
 
 	srv := server.NewServer(cfg, mux)
 	go func() {
 		if err := srv.Run(); err != nil {
-			fmt.Printf("error while running http server: %s\n", err.Error())
+			logs.Error().Msg(fmt.Sprintf("error while starting server: %v", err.Error()))
 		}
 	}()
 
-	logger.Info("Server started")
-
+	logs.Info().Msg("server started")
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 

@@ -5,6 +5,7 @@ http:
 
 logger:
   level: 5
+  filepath: pkg/logger
 
 postgresql:
   host: localhost

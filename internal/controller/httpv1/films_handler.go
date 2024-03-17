@@ -8,16 +8,16 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"vk-test-spring/internal/models"
 	"vk-test-spring/internal/service"
-	"vk-test-spring/pkg/logger"
 )
 
 var (
 	filmsRe           = regexp.MustCompile(`^/films/*$`)
 	filmsIdRe         = regexp.MustCompile(`^/films/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	filmsWithFilterRe = regexp.MustCompile(`^/films(\?(sort=(name|date|rating)&order=(asc|desc)))?$`)
-	filmsNameRe       = regexp.MustCompile(`^/films\?name=.+$`)
-	filmsActorNameRe  = regexp.MustCompile(`^/films\?actor-name=.+$`)
+	//filmsNameRe       = regexp.MustCompile(`^/films\?name=.+$`)
+	//filmsActorNameRe  = regexp.MustCompile(`^/films\?actor-name=.+$`)
 )
 
 type FilmsHandler struct {
@@ -45,13 +45,6 @@ func (h *FilmsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.GetAllFilms(w, r)
 			return
 		}
-	//case r.Method == http.MethodGet && filmsNameRe.MatchString(r.URL.Path):
-	//	fmt.Println("here")
-	//	h.GetFilmsByName(w, r)
-	//	return
-	//case r.Method == http.MethodGet && filmsActorNameRe.MatchString(r.URL.Path):
-	//	h.GetFilmsByActor(w, r)
-	//	return
 	case r.Method == http.MethodPost && filmsRe.MatchString(r.URL.Path) &&
 		r.Context().Value("role").(string) == "администратор":
 		h.AddFilm(w, r)
@@ -84,7 +77,6 @@ func (h *FilmsHandler) AddFilm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO добавить приведение даты из строки к дата типу
 	err := h.filmsService.AddNewFilm(r.Context(), service.FilmCreateInput{
 		FilmInfo: service.FilmInfo{
 			Name:        film.Name,
@@ -95,10 +87,14 @@ func (h *FilmsHandler) AddFilm(w http.ResponseWriter, r *http.Request) {
 		Actors: film.Actors,
 	})
 	if err != nil {
-		logger.Error("Handler")
-		// TODO Сделать выбор нужной ошибки и добавить логгирование
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -138,8 +134,14 @@ func (h *FilmsHandler) UpdateFilm(w http.ResponseWriter, r *http.Request) {
 		ActorsToDel: film.ActorsToDel,
 	})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -154,8 +156,14 @@ func (h *FilmsHandler) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 
 	err = h.filmsService.DeleteFilm(r.Context(), filmId)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -166,8 +174,14 @@ func (h *FilmsHandler) GetAllFilms(w http.ResponseWriter, r *http.Request) {
 
 	filmsList, err := h.filmsService.GetAllFilms(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	jsonResponse, err := json.Marshal(filmsList)
@@ -187,8 +201,14 @@ func (h *FilmsHandler) GetFilmsByName(w http.ResponseWriter, r *http.Request) {
 
 	films, err := h.filmsService.GetAllFilmsByName(r.Context(), name)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	jsonResponse, err := json.Marshal(films)
@@ -208,8 +228,14 @@ func (h *FilmsHandler) GetFilmsByActor(w http.ResponseWriter, r *http.Request) {
 
 	films, err := h.filmsService.GetAllFilmsByActor(r.Context(), actorName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	jsonResponse, err := json.Marshal(films)

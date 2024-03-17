@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"net/http"
 	"time"
 	"vk-test-spring/internal/models"
 )
@@ -109,7 +110,7 @@ func (r *FilmsRepo) Delete(ctx context.Context, filmId uuid.UUID) error {
 
 	if res.RowsAffected() == 0 {
 		tx.Rollback(ctx)
-		return errors.New(fmt.Sprintf("not found film with this id: %v", filmId))
+		return models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintf("not found film with this id: %v", filmId)}
 	}
 
 	tx.Commit(ctx)
@@ -128,7 +129,7 @@ func (r *FilmsRepo) GetAllFilms(ctx context.Context) ([]models.Film, error) {
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			tx.Commit(ctx)
-			return nil, nil
+			return nil, models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintln("films not found")}
 		}
 
 		tx.Rollback(ctx)
@@ -170,14 +171,11 @@ func (r *FilmsRepo) GetFilmByName(ctx context.Context, name string) ([]models.Fi
 		return nil, err
 	}
 
-	//fmt.Sprintf("SELECT id, name, description, date, rating FROM films ORDER BY %s %s", ctx.Value("sort"), ctx.Value("order"))
-	//`SELECT id, name, description, date, rating FROM films
-	//	WHERE films.name LIKE '%$1%'`
 	rows, err := tx.Query(ctx, fmt.Sprintf(`SELECT id, name, description, date, rating FROM films WHERE films.name LIKE '%%%v%%'`, name))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			tx.Commit(ctx)
-			return nil, nil
+			return nil, models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintf("not found film with name like this: %v", name)}
 		}
 
 		tx.Rollback(ctx)
@@ -225,7 +223,7 @@ func (r *FilmsRepo) GetFilmByActor(ctx context.Context, actorName string) ([]mod
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			tx.Commit(ctx)
-			return nil, nil
+			return nil, models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintf("not found film with actor name like this: %v", actorName)}
 		}
 
 		tx.Rollback(ctx)
@@ -273,6 +271,10 @@ func (r *FilmsRepo) GetFilmById(ctx context.Context, filmId uuid.UUID) (models.F
 	err = tx.QueryRow(ctx, `SELECT id, name, description, date, rating
 	FROM films WHERE id=$1`, filmId).Scan(&film.ID, &film.Name, &film.Description, &t, &film.Rating)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			tx.Rollback(ctx)
+			return models.Film{}, models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintf("not found film with this id: %v", filmId)}
+		}
 		tx.Rollback(ctx)
 		return models.Film{}, err
 	}

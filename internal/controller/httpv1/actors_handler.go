@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"vk-test-spring/internal/models"
 	"vk-test-spring/internal/service"
 )
 
 var (
-	actorsRe    = regexp.MustCompile(`^/actors/*$`)
-	actorIdRe   = regexp.MustCompile(`^/actors/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-	actorNameRe = regexp.MustCompile(`^/actors\?name=.+$`)
+	actorsRe  = regexp.MustCompile(`^/actors/*$`)
+	actorIdRe = regexp.MustCompile(`^/actors/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	// actorNameRe = regexp.MustCompile(`^/actors\?name=.+$`)
 	// actorNameReV2 ^/actors(\?name=.+)?$
 )
 
@@ -79,9 +80,14 @@ func (h *ActorsHandler) AddActor(w http.ResponseWriter, r *http.Request) {
 		Films: actor.Films,
 	})
 	if err != nil {
-		// TODO Сделать выбор нужной ошибки и добавить логгирование
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -110,7 +116,6 @@ func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO добавить приведение даты из строки к дата типу
 	err = h.actorsService.UpdateActor(r.Context(), service.ActorUpdateInput{
 		ID: actorId,
 		ActorInfo: service.ActorInfo{
@@ -124,8 +129,14 @@ func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
 		FilmsToDel: actor.FilmsToDel,
 	})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -140,8 +151,14 @@ func (h *ActorsHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 
 	err = h.actorsService.DeleteActor(r.Context(), actorId)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -150,8 +167,14 @@ func (h *ActorsHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 func (h *ActorsHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 	actorsList, err := h.actorsService.GetAllActors(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	jsonResponse, err := json.Marshal(actorsList)
@@ -173,8 +196,14 @@ func (h *ActorsHandler) GetActorById(w http.ResponseWriter, r *http.Request) {
 
 	actor, err := h.actorsService.GetActorById(r.Context(), actorId)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	jsonResponse, err := json.Marshal(actor)
@@ -197,8 +226,14 @@ func (h *ActorsHandler) GetActorByName(w http.ResponseWriter, r *http.Request) {
 
 	actors, err := h.actorsService.GetActorByName(r.Context(), name)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		switch e := err.(type) {
+		case models.CustomError:
+			http.Error(w, e.Message, e.Code)
+			return
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	jsonResponse, err := json.Marshal(actors)
@@ -216,6 +251,5 @@ func (h *ActorsHandler) getActorIdFromRequest(r *http.Request) (uuid.UUID, error
 	if len(parts) != 3 {
 		return uuid.UUID{}, errors.New("error while extracting uuid")
 	}
-
 	return uuid.Parse(parts[2])
 }

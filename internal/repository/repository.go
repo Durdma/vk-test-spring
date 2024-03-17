@@ -47,11 +47,3 @@ func NewRepositories(db *pgxpool.Pool) *Repositories {
 		Users:  postgresql.NewUsersRepo(db),
 	}
 }
-
-//func NewRepositories(db *pgx.Conn) *Repositories {
-//	return &Repositories{
-//		Films:  postgresql.NewFilmsRepo(db),
-//		Actors: postgresql.MewActorsRepo(db),
-//		Users:  postgresql.NewUsersRepo(db),
-//	}
-//}

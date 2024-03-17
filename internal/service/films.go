@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"net/http"
 	"slices"
 	"time"
 	"vk-test-spring/internal/models"
 	"vk-test-spring/internal/repository"
-	"vk-test-spring/pkg/logger"
 )
 
 type FilmsService struct {
@@ -114,7 +114,7 @@ type FilmCreateInput struct {
 func (s *FilmsService) AddNewFilm(ctx context.Context, input FilmCreateInput) error {
 	err := input.FilmInfo.validate()
 	if err != nil {
-		return err
+		return models.CustomError{Code: http.StatusBadRequest, Message: err.Error()}
 	}
 
 	film := models.Film{
@@ -126,7 +126,6 @@ func (s *FilmsService) AddNewFilm(ctx context.Context, input FilmCreateInput) er
 
 	err = s.repo.Create(ctx, film, input.Actors)
 	if err != nil {
-		logger.Error("service 1")
 		return err
 	}
 
@@ -167,13 +166,13 @@ func (s *FilmsService) EditFilm(ctx context.Context, input FilmUpdateInput) erro
 	}
 	err = filmValidation.validate()
 	if err != nil {
-		return err
+		return models.CustomError{Code: http.StatusBadRequest, Message: err.Error()}
 	}
 
 	if len(input.ActorsToAdd) > 0 || len(input.ActorsToDel) > 0 {
 		err = s.parseActorsLists(oldFilm.Actors, input.ActorsToAdd, input.ActorsToDel)
 		if err != nil {
-			return err
+			return models.CustomError{Code: http.StatusBadRequest, Message: err.Error()}
 		}
 	}
 

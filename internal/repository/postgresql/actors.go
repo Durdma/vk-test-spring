@@ -7,9 +7,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"net/http"
 	"time"
 	"vk-test-spring/internal/models"
-	"vk-test-spring/pkg/logger"
 )
 
 type ActorsRepo struct {
@@ -112,7 +112,7 @@ func (r *ActorsRepo) Delete(ctx context.Context, actorId uuid.UUID) error {
 
 	if res.RowsAffected() == 0 {
 		tx.Rollback(ctx)
-		return errors.New(fmt.Sprintf("not found actor with this id: %v", actorId))
+		return models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintf("not found actor with this id: %v", actorId)}
 	}
 
 	tx.Commit(ctx)
@@ -131,7 +131,7 @@ func (r *ActorsRepo) GetAllActors(ctx context.Context) ([]models.Actor, error) {
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			tx.Commit(ctx)
-			return nil, nil
+			return nil, models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintln("actors not found")}
 		}
 
 		tx.Rollback(ctx)
@@ -178,7 +178,7 @@ func (r *ActorsRepo) GetActorsByName(ctx context.Context, name string) ([]models
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			tx.Commit(ctx)
-			return nil, nil
+			return nil, models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintf("not found. actors with name like this: %v", name)}
 		}
 		tx.Rollback(ctx)
 		return nil, err
@@ -226,6 +226,9 @@ func (r *ActorsRepo) GetActorById(ctx context.Context, actorId uuid.UUID) (model
 	FROM actors WHERE id=$1`, actorId).Scan(
 		&actor.ID, &actor.Name, &actor.SecondName, &actor.Patronymic, &t, &actor.Sex)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Actor{}, models.CustomError{Code: http.StatusNotFound, Message: fmt.Sprintf("not found actor with this id: %v", actorId)}
+		}
 		tx.Rollback(ctx)
 		return models.Actor{}, err
 	}
@@ -296,8 +299,6 @@ func (r *ActorsRepo) getActorFilms(ctx context.Context, tx pgx.Tx, actorId uuid.
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, err
 		}
-		logger.Errorf("error 1 in getActorFilms: %v", err)
-
 		return nil, err
 	}
 	defer rows.Close()
@@ -308,8 +309,6 @@ func (r *ActorsRepo) getActorFilms(ctx context.Context, tx pgx.Tx, actorId uuid.
 
 		err := rows.Scan(&film.ID, &film.Name)
 		if err != nil {
-			logger.Errorf("error 2 in getActorFilms: %v", err)
-
 			return nil, err
 		}
 

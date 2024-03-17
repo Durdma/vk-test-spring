@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"net/http"
 	"regexp"
 	"slices"
 	"time"
@@ -115,7 +116,7 @@ type ActorCreateInput struct {
 func (s *ActorsService) AddActor(ctx context.Context, input ActorCreateInput) error {
 	err := input.ActorInfo.validate()
 	if err != nil {
-		return err
+		return models.CustomError{Code: http.StatusBadRequest, Message: err.Error()}
 	}
 
 	actor := models.Actor{
@@ -142,7 +143,6 @@ type ActorUpdateInput struct {
 }
 
 func (s *ActorsService) UpdateActor(ctx context.Context, input ActorUpdateInput) error {
-
 	actor := models.Actor{
 		ID:          input.ID,
 		Name:        input.ActorInfo.Name,
@@ -171,13 +171,13 @@ func (s *ActorsService) UpdateActor(ctx context.Context, input ActorUpdateInput)
 	}
 	err = actorValidation.validate()
 	if err != nil {
-		return err
+		return models.CustomError{Code: http.StatusBadRequest, Message: err.Error()}
 	}
 
 	if len(input.FilmsToAdd) > 0 || len(input.FilmsToDel) > 0 {
 		err = s.parseFilmsLists(oldActor.Films, input.FilmsToAdd, input.FilmsToDel)
 		if err != nil {
-			return err
+			return models.CustomError{Code: http.StatusBadRequest, Message: err.Error()}
 		}
 	}
 
@@ -229,7 +229,7 @@ func (s *ActorsService) mergeChanges(actor models.Actor, oldActor models.Actor) 
 func (s *ActorsService) parseFilmsLists(currentFilms []models.ActorFilm, filmsToAdd []uuid.UUID, filmsToDel []uuid.UUID) error {
 	for _, f := range filmsToAdd {
 		if slices.Contains(filmsToDel, f) {
-			return errors.New(fmt.Sprintf("films_to_add and films_to_del contains same film_id: %v", f))
+			return models.CustomError{Code: http.StatusBadRequest, Message: fmt.Sprintf("films_to_add and films_to_del contains same film_id: %v", f)}
 		}
 	}
 
@@ -240,15 +240,13 @@ func (s *ActorsService) parseFilmsLists(currentFilms []models.ActorFilm, filmsTo
 
 	for _, f := range filmsToAdd {
 		if slices.Contains(currentFilmsUUID, f) {
-			return errors.New(fmt.Sprintf("films_to_add film_id that is already in actors_films: %v", f))
+			return models.CustomError{Code: http.StatusBadRequest, Message: fmt.Sprintf("films_to_add film_id that is already in actors_films: %v", f)}
 		}
 	}
 
 	for _, f := range filmsToDel {
-		fmt.Println(f)
-		fmt.Println(!slices.Contains(currentFilmsUUID, f))
 		if !slices.Contains(currentFilmsUUID, f) {
-			return errors.New(fmt.Sprintf("films_to_del contains film_id that not in actors_films: %v", f))
+			return models.CustomError{Code: http.StatusBadRequest, Message: fmt.Sprintf("films_to_del contains film_id that not in actors_films: %v", f)}
 		}
 	}
 

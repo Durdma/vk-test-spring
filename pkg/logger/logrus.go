@@ -1,6 +1,14 @@
 package logger
 
-import "github.com/sirupsen/logrus"
+import (
+	"context"
+	"github.com/sirupsen/logrus"
+)
+
+type Args struct {
+	Ctx context.Context
+	Msg string
+}
 
 func Debug(msg ...interface{}) {
 	logrus.Debug(msg)

@@ -15,9 +15,14 @@ const (
 )
 
 type Config struct {
-	PostgreSQL  PostgreSQLConfig
-	HTTP        HTTPConfig
-	LoggerLevel int
+	PostgreSQL PostgreSQLConfig
+	HTTP       HTTPConfig
+	Logger     LoggerConfig
+}
+
+type LoggerConfig struct {
+	LoggerLevel    int
+	LoggerFilePath string
 }
 
 type HTTPConfig struct {
@@ -56,7 +61,11 @@ func Init(path string) (*Config, error) {
 }
 
 func unmarshal(cfg *Config) error {
-	if err := viper.UnmarshalKey("logger.level", &cfg.LoggerLevel); err != nil {
+	if err := viper.UnmarshalKey("logger.level", &cfg.Logger.LoggerLevel); err != nil {
+		return err
+	}
+
+	if err := viper.UnmarshalKey("loggger.file", &cfg.Logger.LoggerFilePath); err != nil {
 		return err
 	}
 
