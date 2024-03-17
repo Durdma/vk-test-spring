@@ -69,12 +69,14 @@ func (h *ActorsHandler) AddActor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := h.actorsService.AddActor(r.Context(), service.ActorCreateInput{
-		Name:        actor.Name,
-		SecondName:  actor.SecondName,
-		Patronymic:  actor.Patronymic,
-		Sex:         actor.Sex,
-		DateOfBirth: actor.DateOfBirth,
-		Films:       actor.Films,
+		ActorInfo: service.ActorInfo{
+			Name:        actor.Name,
+			SecondName:  actor.SecondName,
+			Patronymic:  actor.Patronymic,
+			Sex:         actor.Sex,
+			DateOfBirth: actor.DateOfBirth,
+		},
+		Films: actor.Films,
 	})
 	if err != nil {
 		// TODO Сделать выбор нужной ошибки и добавить логгирование
@@ -110,14 +112,16 @@ func (h *ActorsHandler) UpdateActor(w http.ResponseWriter, r *http.Request) {
 
 	// TODO добавить приведение даты из строки к дата типу
 	err = h.actorsService.UpdateActor(r.Context(), service.ActorUpdateInput{
-		ID:          actorId,
-		Name:        actor.Name,
-		SecondName:  actor.SecondName,
-		Patronymic:  actor.Patronymic,
-		Sex:         actor.Sex,
-		DateOfBirth: actor.DateOfBirth,
-		FilmsToAdd:  actor.FilmsToAdd,
-		FilmsToDel:  actor.FilmsToDel,
+		ID: actorId,
+		ActorInfo: service.ActorInfo{
+			Name:        actor.Name,
+			SecondName:  actor.SecondName,
+			Patronymic:  actor.Patronymic,
+			Sex:         actor.Sex,
+			DateOfBirth: actor.DateOfBirth,
+		},
+		FilmsToAdd: actor.FilmsToAdd,
+		FilmsToDel: actor.FilmsToDel,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -7,24 +7,6 @@ import (
 	"vk-test-spring/internal/repository"
 )
 
-type FilmCreateInput struct {
-	Name        string
-	Description string
-	Date        string
-	Rating      float64
-	Actors      []uuid.UUID
-}
-
-type FilmUpdateInput struct {
-	ID          uuid.UUID
-	Name        string
-	Description string
-	Date        string
-	Rating      float64
-	ActorsToAdd []uuid.UUID
-	ActorsToDel []uuid.UUID
-}
-
 type Films interface {
 	AddNewFilm(ctx context.Context, input FilmCreateInput) error
 	EditFilm(ctx context.Context, input FilmUpdateInput) error
@@ -34,26 +16,6 @@ type Films interface {
 	GetAllFilmsByActor(ctx context.Context, actorsName string) ([]models.Film, error)
 }
 
-type ActorCreateInput struct {
-	Name        string
-	SecondName  string
-	Patronymic  string
-	Sex         string
-	DateOfBirth string
-	Films       []uuid.UUID
-}
-
-type ActorUpdateInput struct {
-	ID          uuid.UUID
-	Name        string
-	SecondName  string
-	Patronymic  string
-	Sex         string
-	DateOfBirth string
-	FilmsToAdd  []uuid.UUID
-	FilmsToDel  []uuid.UUID
-}
-
 type Actors interface {
 	AddActor(ctx context.Context, input ActorCreateInput) error
 	UpdateActor(ctx context.Context, input ActorUpdateInput) error
@@ -61,9 +23,6 @@ type Actors interface {
 	GetAllActors(ctx context.Context) ([]models.Actor, error)
 	GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error)
 	GetActorByName(ctx context.Context, name string) ([]models.Actor, error)
-}
-
-type UserInput struct {
 }
 
 type Users interface {

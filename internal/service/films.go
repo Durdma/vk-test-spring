@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"slices"
+	"time"
 	"vk-test-spring/internal/models"
 	"vk-test-spring/internal/repository"
 	"vk-test-spring/pkg/logger"
@@ -21,15 +22,109 @@ func NewFilmsService(repo repository.Films) *FilmsService {
 	}
 }
 
-func (s *FilmsService) AddNewFilm(ctx context.Context, input FilmCreateInput) error {
-	film := models.Film{
-		Name:        input.Name,
-		Description: input.Description,
-		Date:        input.Date,
-		Rating:      input.Rating,
+type FilmInfo struct {
+	Name        string
+	Description string
+	Date        string
+	Rating      float64
+}
+
+func (in *FilmInfo) validate() error {
+	err := in.validateName()
+	if err != nil {
+		return err
 	}
 
-	err := s.repo.Create(ctx, film, input.Actors)
+	err = in.validateDescription()
+	if err != nil {
+		return err
+	}
+
+	err = in.validateDate()
+	if err != nil {
+		return err
+	}
+
+	err = in.validateRating()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (in *FilmInfo) validateName() error {
+	switch {
+	case len(in.Name) < 1:
+		return errors.New(fmt.Sprintf("input film's name too short. Length of name must be between 1 and 150,"+
+			" but got: %v", len(in.Name)))
+	case len(in.Name) > 150:
+		return errors.New(fmt.Sprintf("input film's name too long. length of name must be between 1 and 150,"+
+			" but got: %v", len(in.Name)))
+	case len(in.Name) == 0:
+		return errors.New("input film's name is empty")
+	default:
+		return nil
+	}
+}
+
+func (in *FilmInfo) validateDescription() error {
+	if len(in.Description) > 1000 {
+		return errors.New(fmt.Sprintf("input film's description too long. length of name must be between 1 and 1000,"+
+			" but got: %v", len(in.Description)))
+	}
+
+	return nil
+}
+
+func (in *FilmInfo) validateDate() error {
+	d, err := time.Parse(time.DateOnly, in.Date)
+	if err != nil {
+		return err
+	}
+
+	before := time.Date(1895, time.December, 28, 0, 0, 0, 0, time.UTC)
+
+	if d.Before(before) {
+		return errors.New(fmt.Sprintf("input film's date not in range. date cant be earlier %v, "+
+			"but has: %v", before.Format(time.DateOnly), in.Date))
+	}
+
+	return err
+}
+
+func (in *FilmInfo) validateRating() error {
+	switch {
+	case in.Rating < 0:
+		return errors.New(fmt.Sprintf("input films's rating is negative. rating value must be in range between 0 and 10,"+
+			" but got: %v", in.Rating))
+	case in.Rating > 10:
+		return errors.New(fmt.Sprintf("input films's rating is too big. rating value must be in range between 0 and 10,"+
+			" but got: %v", in.Rating))
+	default:
+		return nil
+	}
+}
+
+type FilmCreateInput struct {
+	FilmInfo FilmInfo
+	Actors   []uuid.UUID
+}
+
+func (s *FilmsService) AddNewFilm(ctx context.Context, input FilmCreateInput) error {
+	err := input.FilmInfo.validate()
+	if err != nil {
+		return err
+	}
+
+	film := models.Film{
+		Name:        input.FilmInfo.Name,
+		Description: input.FilmInfo.Description,
+		Date:        input.FilmInfo.Date,
+		Rating:      input.FilmInfo.Rating,
+	}
+
+	err = s.repo.Create(ctx, film, input.Actors)
 	if err != nil {
 		logger.Error("service 1")
 		return err
@@ -38,13 +133,20 @@ func (s *FilmsService) AddNewFilm(ctx context.Context, input FilmCreateInput) er
 	return err
 }
 
+type FilmUpdateInput struct {
+	ID          uuid.UUID
+	FilmInfo    FilmInfo
+	ActorsToAdd []uuid.UUID
+	ActorsToDel []uuid.UUID
+}
+
 func (s *FilmsService) EditFilm(ctx context.Context, input FilmUpdateInput) error {
 	film := models.Film{
 		ID:          input.ID,
-		Name:        input.Name,
-		Description: input.Description,
-		Date:        input.Date,
-		Rating:      input.Rating,
+		Name:        input.FilmInfo.Name,
+		Description: input.FilmInfo.Description,
+		Date:        input.FilmInfo.Date,
+		Rating:      input.FilmInfo.Rating,
 	}
 
 	oldFilm, err := s.repo.GetFilmById(ctx, input.ID)
@@ -53,6 +155,17 @@ func (s *FilmsService) EditFilm(ctx context.Context, input FilmUpdateInput) erro
 	}
 
 	film, err = s.mergeChanges(film, oldFilm)
+	if err != nil {
+		return err
+	}
+
+	filmValidation := FilmInfo{
+		Name:        film.Name,
+		Description: film.Description,
+		Date:        film.Date,
+		Rating:      film.Rating,
+	}
+	err = filmValidation.validate()
 	if err != nil {
 		return err
 	}
@@ -105,7 +218,6 @@ func (s *FilmsService) mergeChanges(film models.Film, oldFilm models.Film) (mode
 	return film, nil
 }
 
-// TODO Rewrite this function to parse only toDel and toAdd parse, DB will return err, if no id in list
 func (s *FilmsService) parseActorsLists(currentActors []models.FilmActors, actorsToAdd []uuid.UUID, actorsToDel []uuid.UUID) error {
 	for _, a := range actorsToAdd {
 		if slices.Contains(actorsToDel, a) {
@@ -125,7 +237,7 @@ func (s *FilmsService) parseActorsLists(currentActors []models.FilmActors, actor
 	}
 
 	for _, a := range actorsToDel {
-		if slices.Contains(currentActorsUUID, a) {
+		if !slices.Contains(currentActorsUUID, a) {
 			return errors.New(fmt.Sprintf("actors_to_del contains actor_id that not in film_actors: %v", a))
 		}
 	}

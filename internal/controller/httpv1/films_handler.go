@@ -33,14 +33,25 @@ func NewFilmsHandler(filmsService service.Films) *FilmsHandler {
 func (h *FilmsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodGet && filmsWithFilterRe.MatchString(r.URL.Path):
-		h.GetAllFilms(w, r)
-		return
-	case r.Method == http.MethodGet && filmsNameRe.MatchString(r.URL.Path):
-		h.GetFilmsByName(w, r)
-		return
-	case r.Method == http.MethodGet && filmsActorNameRe.MatchString(r.URL.Path):
-		h.GetFilmsByActor(w, r)
-		return
+		params := r.URL.Query()
+		switch {
+		case params.Get("name") != "":
+			h.GetFilmsByName(w, r)
+			return
+		case params.Get("actor-name") != "":
+			h.GetFilmsByActor(w, r)
+			return
+		default:
+			h.GetAllFilms(w, r)
+			return
+		}
+	//case r.Method == http.MethodGet && filmsNameRe.MatchString(r.URL.Path):
+	//	fmt.Println("here")
+	//	h.GetFilmsByName(w, r)
+	//	return
+	//case r.Method == http.MethodGet && filmsActorNameRe.MatchString(r.URL.Path):
+	//	h.GetFilmsByActor(w, r)
+	//	return
 	case r.Method == http.MethodPost && filmsRe.MatchString(r.URL.Path) &&
 		r.Context().Value("role").(string) == "администратор":
 		h.AddFilm(w, r)
@@ -75,11 +86,13 @@ func (h *FilmsHandler) AddFilm(w http.ResponseWriter, r *http.Request) {
 
 	// TODO добавить приведение даты из строки к дата типу
 	err := h.filmsService.AddNewFilm(r.Context(), service.FilmCreateInput{
-		Name:        film.Name,
-		Description: film.Description,
-		Date:        film.Date,
-		Rating:      film.Rating,
-		Actors:      film.Actors,
+		FilmInfo: service.FilmInfo{
+			Name:        film.Name,
+			Description: film.Description,
+			Date:        film.Date,
+			Rating:      film.Rating,
+		},
+		Actors: film.Actors,
 	})
 	if err != nil {
 		logger.Error("Handler")
@@ -114,11 +127,13 @@ func (h *FilmsHandler) UpdateFilm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.filmsService.EditFilm(r.Context(), service.FilmUpdateInput{
-		ID:          filmId,
-		Name:        film.Name,
-		Description: film.Description,
-		Date:        film.Date,
-		Rating:      film.Rating,
+		ID: filmId,
+		FilmInfo: service.FilmInfo{
+			Name:        film.Name,
+			Description: film.Description,
+			Date:        film.Date,
+			Rating:      film.Rating,
+		},
 		ActorsToAdd: film.ActorsToAdd,
 		ActorsToDel: film.ActorsToDel,
 	})
@@ -167,11 +182,8 @@ func (h *FilmsHandler) GetAllFilms(w http.ResponseWriter, r *http.Request) {
 
 func (h *FilmsHandler) GetFilmsByName(w http.ResponseWriter, r *http.Request) {
 	var name string
-	err := json.NewDecoder(r.Body).Decode(&name)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	params := r.URL.Query()
+	name = params.Get("name")
 
 	films, err := h.filmsService.GetAllFilmsByName(r.Context(), name)
 	if err != nil {
@@ -191,11 +203,8 @@ func (h *FilmsHandler) GetFilmsByName(w http.ResponseWriter, r *http.Request) {
 
 func (h *FilmsHandler) GetFilmsByActor(w http.ResponseWriter, r *http.Request) {
 	var actorName string
-	err := json.NewDecoder(r.Body).Decode(&actorName)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	params := r.URL.Query()
+	actorName = params.Get("name")
 
 	films, err := h.filmsService.GetAllFilmsByActor(r.Context(), actorName)
 	if err != nil {

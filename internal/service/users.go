@@ -15,6 +15,9 @@ func NewUsersService(repo repository.Users) *UsersService {
 	}
 }
 
+type UserInput struct {
+}
+
 func (s *UsersService) CreateUser(ctx context.Context, input UserInput) error {
 	return nil
 }
