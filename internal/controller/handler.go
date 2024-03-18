@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"github.com/rs/zerolog"
+	_ "github.com/swaggo/files"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"

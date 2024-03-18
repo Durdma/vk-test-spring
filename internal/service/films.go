@@ -55,9 +55,6 @@ func (in *FilmInfo) validate() error {
 
 func (in *FilmInfo) validateName() error {
 	switch {
-	case len(in.Name) < 1:
-		return errors.New(fmt.Sprintf("input film's name too short. Length of name must be between 1 and 150,"+
-			" but got: %v", len(in.Name)))
 	case len(in.Name) > 150:
 		return errors.New(fmt.Sprintf("input film's name too long. length of name must be between 1 and 150,"+
 			" but got: %v", len(in.Name)))
@@ -72,6 +69,9 @@ func (in *FilmInfo) validateDescription() error {
 	if len(in.Description) > 1000 {
 		return errors.New(fmt.Sprintf("input film's description too long. length of name must be between 1 and 1000,"+
 			" but got: %v", len(in.Description)))
+	}
+	if len(in.Description) < 1 {
+		return errors.New("empty film's description")
 	}
 
 	return nil

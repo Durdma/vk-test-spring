@@ -19,19 +19,15 @@ CREATE TABLE films (
     CONSTRAINT films_pk PRIMARY KEY (id)
 );
 
-CREATE TYPE FIO AS (
-    f_name varchar(150),
-    s_name varchar(150),
-    patronymic varchar(150)
-    );
-
 CREATE TYPE SEX AS ENUM (
     'Мужчина', 'Женщина'
 );
 
 CREATE TABLE actors (
     id uuid NOT NULL DEFAULT uuid_generate_v1mc(),
-    fio FIO,
+    f_name varchar(150) NOT NULL,
+    s_name varchar(150) NOT NULL,
+    patronymic varchar(150) NOT NULL,
     birthday date NOT NULL,
     sex SEX,
     CONSTRAINT actors_pk PRIMARY KEY (id)
@@ -43,15 +39,18 @@ CREATE TABLE actors_films (
     PRIMARY KEY (fk_actor_id, fk_film_id),
     FOREIGN KEY (fk_actor_id) REFERENCES actors(id) ON DELETE CASCADE ON UPDATE RESTRICT,
     FOREIGN KEY (fk_film_id) REFERENCES films(id) ON DELETE CASCADE ON UPDATE RESTRICT
-)
+);
 
 CREATE TYPE ROLES AS ENUM (
     'пользователь', 'администратор'
-)
+);
 
 CREATE TABLE users (
     id uuid NOT NULL DEFAULT uuid_generate_v1mc(),
     name varchar(50),
     role ROLES NOT NULL,
     CONSTRAINT users_pk PRIMARY KEY (id)
-)
+);
+
+insert into users (name, role) values ('admin', 'администратор');
+insert into users (name, role) values ('user', 'пользователь');

@@ -11,7 +11,7 @@ postgresql:
   host: localhost
   port: 5432
   user: postgres
-  password: zxc13243546
+  password: postgres
   dbname: films_library
   sslmode: disabled
   maxIdleConnections: 5

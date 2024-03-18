@@ -5,7 +5,6 @@ import (
 	filepath2 "path/filepath"
 	"runtime"
 	"time"
-	"vk-test-spring/pkg/logger"
 )
 
 const (
@@ -91,7 +90,6 @@ func parseConfigFile(filepath string) error {
 	//viper.SetConfigName(name)
 	if os := runtime.GOOS; os == "linux" {
 		viper.SetConfigFile("/app/configs/main.yaml")
-		logger.Infof("path: %v", viper.ConfigFileUsed())
 	} else {
 		path := filepath2.Dir(filepath)
 		name := filepath2.Base(filepath)

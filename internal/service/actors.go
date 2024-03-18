@@ -54,15 +54,9 @@ func (in *ActorInfo) validateNamesFields() error {
 	nameRe := regexp.MustCompile(`^(?:[а-яА-Я]+|[a-zA-Z]+)$`)
 	lengthField := 150
 	switch {
-	case !nameRe.MatchString(in.Name):
-		return errors.New(fmt.Sprintf("invalid name format. field must contain"+
-			" only characters from the english or russian language, but has: %v", in.Name))
-	case !nameRe.MatchString(in.SecondName):
-		return errors.New(fmt.Sprintf("invalid second_name format. field must contain"+
-			" only characters from the english or russian language, but has: %v", in.SecondName))
 	case len(in.Patronymic) > 0 && !nameRe.MatchString(in.Patronymic):
 		return errors.New(fmt.Sprintf("invalid patronymic format. field must contain"+
-			" only characters from the english or russian language, but has: %v", in.Name))
+			" only characters from the english or russian language, but has: %v", in.Patronymic))
 	case len(in.Name) < 1:
 		return errors.New(fmt.Sprintf("input actors's name too short. Length of name must be between 1 and %v,"+
 			" but got: %v", lengthField, len(in.Name)))
@@ -78,6 +72,12 @@ func (in *ActorInfo) validateNamesFields() error {
 	case len(in.Patronymic) > lengthField:
 		return errors.New(fmt.Sprintf("input actor's patronymic too long. length of name must be between 1 and %v,"+
 			" but got: %v", lengthField, len(in.Patronymic)))
+	case !nameRe.MatchString(in.Name):
+		return errors.New(fmt.Sprintf("invalid name format. field must contain"+
+			" only characters from the english or russian language, but has: %v", in.Name))
+	case !nameRe.MatchString(in.SecondName):
+		return errors.New(fmt.Sprintf("invalid second_name format. field must contain"+
+			" only characters from the english or russian language, but has: %v", in.SecondName))
 	default:
 		return nil
 	}
@@ -157,10 +157,10 @@ func (s *ActorsService) UpdateActor(ctx context.Context, input ActorUpdateInput)
 		return err
 	}
 
-	actor, err = s.mergeChanges(actor, oldActor)
-	if err != nil {
-		return err
-	}
+	actor, _ = s.mergeChanges(actor, oldActor)
+	//if err != nil {
+	//	return err
+	//}
 
 	actorValidation := ActorInfo{
 		Name:        actor.Name,
@@ -198,7 +198,6 @@ func (s *ActorsService) GetAllActors(ctx context.Context) ([]models.Actor, error
 }
 
 func (s *ActorsService) GetActorById(ctx context.Context, actorId uuid.UUID) (models.Actor, error) {
-
 	return s.repo.GetActorById(ctx, actorId)
 }
 

@@ -14,6 +14,17 @@ import (
 	"vk-test-spring/pkg/logger"
 )
 
+// @title Films library API
+// @version 1.0
+// @description API Server for Films library
+
+// @host localhost:8080
+// @BasePath /films
+
+// @SecurityDefinitions basicAuth
+// @SecurityScheme basic
+// @Security BasicAuth
+
 func Run(configPath string) {
 	// TODO add config for logger
 	logs := logger.InitLogs("../../pkg/logger/logger.json", 5, 3, 30)
@@ -22,7 +33,6 @@ func Run(configPath string) {
 
 	cfg, err := config.Init(configPath)
 	if err != nil {
-		logger.Error(err)
 		return
 	}
 

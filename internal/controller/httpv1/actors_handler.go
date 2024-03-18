@@ -62,6 +62,19 @@ type ActorCreateInput struct {
 	Films       []uuid.UUID `json:"films,omitempty"`
 }
 
+// @Summary Add New Actor
+// @Tags actors
+// @Description create new actor record
+// @ID AddActor
+// @Accept json
+// @Produce json
+// @Param input body ActorCreateInput true
+// @Success 201 {string} string "ok"
+// @Failure 400,404 {object} http.Error
+// @Failure 500 {object} http.Error
+// @Failure default {object} http.Error
+// @Router /films [post]
+
 func (h *ActorsHandler) AddActor(w http.ResponseWriter, r *http.Request) {
 	var actor ActorCreateInput
 	if err := json.NewDecoder(r.Body).Decode(&actor); err != nil {
